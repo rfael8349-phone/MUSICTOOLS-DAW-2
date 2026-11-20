@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#0a0a0f" />
+<title>MUSICTOOL DAW</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="assets/mascot.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="css/theme.css" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <header id="topbar">
+    <div class="brand">
+      <img src="assets/mascot.svg" alt="" class="brand-mascot" />
+      <div class="brand-text">
+        <span class="brand-title">MUSICTOOL</span>
+        <span class="brand-sub">DAW · v0.1.0</span>
+      </div>
+    </div>
+
+    <div class="transport" id="transport">
+      <button class="btn transport-btn" id="btn-rewind" title="Rewind">⏮</button>
+      <button class="btn transport-btn primary" id="btn-play" title="Play">▶</button>
+      <button class="btn transport-btn danger" id="btn-rec" title="Record">●</button>
+      <button class="btn transport-btn" id="btn-stop" title="Stop">■</button>
+      <div class="display" id="display-time">00:00.0</div>
+      <div class="display small" id="display-tempo">
+        <span id="tempo-val">120</span> BPM
+      </div>
+      <div class="display small" id="display-sig">4/4</div>
+      <button class="btn transport-btn" id="btn-metro" title="Metronome">♪</button>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn" id="btn-save" title="Save">💾</button>
+      <button class="btn" id="btn-menu" title="Menu">☰</button>
+    </div>
+  </header>
+
+  <!-- MAIN VIEWS -->
+  <main id="views">
+
+    <!-- PLAYLIST -->
+    <section class="view active" id="view-playlist" data-view="playlist">
+      <div class="playlist-toolbar">
+        <button class="btn accent" id="btn-add-track">+ TRACK</button>
+        <button class="btn" id="btn-add-audio-track">+ AUDIO</button>
+        <div class="spacer"></div>
+        <label class="zoom-label">
+          Zoom
+          <input type="range" id="playlist-zoom" min="40" max="200" value="80" />
+        </label>
+        <button class="btn" id="btn-snap" data-on="1" title="Snap to grid">▦</button>
+      </div>
+
+      <div class="playlist-body">
+        <div class="track-headers" id="track-headers"></div>
+        <div class="timeline-scroll" id="timeline-scroll">
+          <div class="ruler" id="ruler"></div>
+          <div class="timeline" id="timeline"></div>
+          <div class="playhead" id="playhead"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MIXER -->
+    <section class="view" id="view-mixer" data-view="mixer">
+      <div class="placeholder-panel">
+        <h2>MIXER</h2>
+        <p class="muted">Channel strips with faders, pans, meters, EQ, and sends arrive in Stage 3. Track-level volume / mute / solo are already live in the Playlist track headers.</p>
+        <div id="mixer-strips" class="mixer-strips"></div>
+      </div>
+    </section>
+
+    <!-- PIANO ROLL -->
+    <section class="view" id="view-pianoroll" data-view="pianoroll">
+      <div class="placeholder-panel">
+        <h2>PIANO ROLL</h2>
+        <p class="muted">Editable MIDI notes, scale snapping, chord tools, and the built-in synth arrive in Stage 3.</p>
+      </div>
+    </section>
+
+    <!-- DRUM MACHINE -->
+    <section class="view" id="view-drummachine" data-view="drummachine">
+      <div class="placeholder-panel">
+        <h2>DRUM MACHINE</h2>
+        <p class="muted">Step sequencer with synthesized kick, snare, hats, toms, crash, ride arrives in Stage 3.</p>
+      </div>
+    </section>
+
+    <!-- MUSICTOOL -->
+    <section class="view" id="view-musictool" data-view="musictool">
+      <div class="placeholder-panel">
+        <h2>MUSICTOOL</h2>
+        <p class="muted">Chromatic tuner, scales, chords, and progressions arrive in Stage 4.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav id="bottomnav">
+    <button class="nav-btn active" data-target="playlist">
+      <span class="nav-icon">▤</span><span class="nav-label">PLAYLIST</span>
+    </button>
+    <button class="nav-btn" data-target="mixer">
+      <span class="nav-icon">▥</span><span class="nav-label">MIXER</span>
+    </button>
+    <button class="nav-btn" data-target="pianoroll">
+      <span class="nav-icon">♬</span><span class="nav-label">PIANO</span>
+    </button>
+    <button class="nav-btn" data-target="drummachine">
+      <span class="nav-icon">◉</span><span class="nav-label">DRUMS</span>
+    </button>
+    <button class="nav-btn" data-target="musictool">
+      <span class="nav-icon">⚒</span><span class="nav-label">MUSICTOOL</span>
+    </button>
+  </nav>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- MICROPHONE PERMISSION OVERLAY -->
+  <div id="mic-gate" class="mic-gate hidden">
+    <div class="mic-gate-box">
+      <h3>Microphone permission</h3>
+      <p>MUSICTOOL DAW records real audio from your microphone. Tap enable to grant access.</p>
+      <button class="btn accent" id="btn-enable-mic">Enable microphone</button>
+      <button class="btn" id="btn-cancel-mic">Not now</button>
+    </div>
+  </div>
+
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

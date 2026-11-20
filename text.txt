@@ -1,0 +1,37 @@
+musictool-daw/
+├── index.html
+├── manifest.webmanifest
+├── service-worker.js
+├── README.md
+├── LICENSE
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── .gitignore
+├── assets/
+│   └── mascot.svg
+├── css/
+│   ├── main.css
+│   └── theme.css
+├── js/
+│   ├── app.js
+│   ├── state.js
+│   ├── audio-engine.js
+│   ├── recorder.js
+│   ├── transport.js
+│   ├── playlist.js
+│   ├── mixer.js
+│   ├── pianoroll.js
+│   ├── drummachine.js
+│   ├── musictool.js
+│   ├── storage.js
+│   ├── mascot.js
+│   └── worklets/
+│       └── recorder-processor.js
+├── audio/           (empty — for future samples)
+├── midi/            (empty — for future MIDI files)
+├── studio/          (empty — placeholder)
+├── tools/           (empty — build helpers)
+└── docs/
+    ├── ARCHITECTURE.md
+    ├── AUDIO_ENGINE.md
+    └── USER_GUIDE.md
