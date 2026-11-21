@@ -45,7 +45,14 @@ function buildFx(ch,track){
   }else if(fx.type==='chorus'){
    effect=ctx.createDelay(.08);effect.delayTime.value=.018;const lfo=ctx.createOscillator(),depth=ctx.createGain();lfo.frequency.value=.8;depth.gain.value=.006;lfo.connect(depth);depth.connect(effect.delayTime);lfo.start();ch.fxNodes.push(lfo,depth);
   }
-  if(effect){node.connect(effect);node=effect;ch.fxNodes.push(effect);}
+  if(effect){
+   const dry=ctx.createGain(),wet=ctx.createGain(),sum=ctx.createGain();
+   const mix=Math.max(0,Math.min(1,Number(fx.mix??.35)));
+   dry.gain.value=1-mix;wet.gain.value=mix;
+   node.connect(dry);node.connect(effect);effect.connect(wet);
+   dry.connect(sum);wet.connect(sum);node=sum;
+   ch.fxNodes.push(effect,dry,wet,sum);
+  }
  }
  node.connect(tail);ch.fxSignature=signature;
 }
