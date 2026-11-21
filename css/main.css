@@ -688,3 +688,104 @@
 @media (max-width: 899px), (max-height: 519px) {
   #bottomnav { min-width:0; }
 }
+
+
+/* =========================================================
+   V6.1 ROOT RELEASE — Windows XP-inspired touch workspace
+   Mobile portrait receives a visible redesign; all existing
+   controls and IDs remain intact so the audio logic is preserved.
+   ========================================================= */
+@media (max-width: 699px) {
+  :root { --topbar-h: 58px; --nav-h: 64px; }
+  #app { background:#7898bf; padding:2px; gap:2px; }
+  #topbar {
+    background:linear-gradient(180deg,#62a5f5 0%,#347fce 38%,#1858a5 100%);
+    border:1px solid #0e4389; border-radius:5px 5px 2px 2px;
+    box-shadow:inset 0 1px rgba(255,255,255,.65),0 1px 3px rgba(0,0,0,.35);
+    padding:0 7px; gap:5px;
+  }
+  .brand { gap:5px; }
+  .brand-mascot { width:31px; height:31px; }
+  .brand-text { display:flex; }
+  .brand-title { color:#fff; font-size:13px; letter-spacing:1.3px; text-shadow:0 1px 2px #17457b; }
+  .brand-sub { color:#e1efff; font-size:8px; letter-spacing:.7px; }
+  .transport {
+    gap:2px; padding:3px 4px; border-radius:4px;
+    background:linear-gradient(180deg,#e9f3ff,#bfd3e9);
+    border:1px solid #174a91; box-shadow:inset 0 1px #fff;
+  }
+  .transport .btn,.top-actions .btn {
+    color:#17385e; background:linear-gradient(180deg,#fff,#cbdcf0);
+    border:1px solid #86a3c4; border-radius:3px; min-width:29px;
+    min-height:31px; padding:3px 5px; box-shadow:inset 0 1px #fff;
+  }
+  .transport .btn.primary { color:#16743a; }
+  .transport .btn.danger { color:#b51e27; }
+  .display { background:#071629; border:1px inset #91a9c5; color:#78e7d6; min-width:59px; font-size:11px; padding:3px 4px; }
+  .display.small { min-width:43px; color:#ffd36c; font-size:9px; }
+  .top-actions { gap:3px; }
+  #views { background:#15283f; border:1px solid #5f82aa; border-radius:2px; }
+  .playlist-toolbar {
+    background:linear-gradient(180deg,#e8f1fb,#c5d8ed);
+    border-bottom:1px solid #7d9bbb; padding:5px 6px; gap:4px;
+  }
+  .playlist-toolbar .btn {
+    color:#17385c; background:linear-gradient(180deg,#fff,#d1dfef);
+    border:1px solid #8aa6c5; border-radius:3px; min-height:32px; padding:5px 7px;
+  }
+  .playlist-toolbar .btn.accent { color:#fff; background:linear-gradient(180deg,#4388cf,#18569b); border-color:#174b87; }
+  .zoom-label { color:#294969; font-size:10px; }
+  .playlist-body { grid-template-columns:126px minmax(0,1fr); }
+  .track-headers { background:#1a2c43; border-right:2px solid #7393b6; }
+  .track-header,.track-lane { height:52px !important; min-height:52px; max-height:52px; }
+  .track-header { padding:0 5px; gap:4px; }
+  .track-header.selected { background:#2a4a70; box-shadow:inset 3px 0 #ffd36c; }
+  .track-name { font-size:11px; }
+  .track-toggle { font-size:8px; padding:2px 4px; }
+  .track-ruler-spacer,.ruler { background:linear-gradient(180deg,#dce9f7,#b5cbe3); color:#294969; border-bottom:1px solid #7895b5; }
+  .timeline-scroll { background:#111e2e; }
+  .track-lane { border-bottom:1px solid #52667e; }
+  #bottomnav {
+    background:linear-gradient(180deg,#e5edf7,#b9cde4);
+    border:1px solid #6486ad; border-radius:3px;
+    box-shadow:inset 0 1px #fff;
+  }
+  .nav-btn { color:#244363; border-top:2px solid transparent; gap:2px; }
+  .nav-btn .nav-icon { color:#1d568f; font-size:17px; }
+  .nav-btn .nav-label { color:#244363; font-size:7px; letter-spacing:0; }
+  .nav-btn.active {
+    color:#123d70; background:linear-gradient(180deg,#fff,#d8e7f7);
+    border-top-color:#2f78c4; box-shadow:inset 0 1px #fff;
+  }
+  .nav-btn.active .nav-icon,.nav-btn.active .nav-label { color:#123d70; }
+  .toast { bottom:calc(var(--nav-h) + 10px); }
+}
+@media (max-width: 380px) {
+  .brand-title { font-size:11px; }
+  .brand-sub { font-size:7px; }
+  .brand-mascot { width:27px; height:27px; }
+  .display { min-width:52px; }
+  .display.small { min-width:37px; }
+  .transport-btn { min-width:26px !important; }
+  .playlist-body { grid-template-columns:116px minmax(0,1fr); }
+}
+
+/* V6.2 instrument touch keyboard */
+.touch-piano {
+  display:grid; grid-template-columns:repeat(24,minmax(25px,1fr));
+  gap:2px; min-width:720px; height:190px; padding:12px 4px;
+  overflow-x:auto; background:#182638; border:1px solid #536d8b; border-radius:5px;
+}
+.piano-key {
+  min-width:25px; height:164px; align-self:start;
+  border:1px solid #71869e; border-radius:0 0 4px 4px;
+  background:linear-gradient(180deg,#fff,#d8e2ed); color:#1a2b3d;
+  font-size:9px; font-weight:700; touch-action:none;
+}
+.piano-key.black-key {
+  height:104px; margin:0 -5px; z-index:2; position:relative;
+  background:linear-gradient(180deg,#43536a,#111b29); color:#fff;
+  border-color:#0a111b;
+}
+.piano-key:active { filter:brightness(1.22); transform:translateY(2px); }
+@media(max-width:600px) { .touch-piano { height:166px; } .piano-key { height:140px; } .piano-key.black-key { height:88px; } }

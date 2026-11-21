@@ -2,8 +2,8 @@
 import { state } from './state.js';
 import { decodeAudio } from './audio-engine.js';
 
-const META_KEY = 'musicttool-daw-project-v5';
-const DB_NAME = 'musicttool-daw-audio';
+const META_KEY = 'musicttool-daw-project-v61-root';
+const DB_NAME = 'musicttool-daw-audio-v61-root';
 const STORE = 'clips';
 
 function openDB() {
@@ -47,7 +47,7 @@ export async function saveProject() {
     projectId: state.projectId, projectName: state.projectName, bpm: state.bpm,
     timeSig: state.timeSig, snap: state.snap, zoom: state.zoom,
     selectedTrackId: state.selectedTrackId, selectedClipId: state.selectedClipId,
-    metronome: state.metronome, inputGainDb: state.inputGainDb ?? 0, masterVolume: state.masterVolume ?? 0.9, playhead: state.playhead, version: 5,
+    metronome: state.metronome, inputGainDb: state.inputGainDb ?? 0, masterVolume: state.masterVolume ?? 0.9, playhead: state.playhead, version: 61,
     tracks: state.tracks.map(track => ({
       ...track, input: null, takes: [],
       clips: track.clips.map(({ audioBuffer, blob, ...clip }) => clip)
