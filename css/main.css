@@ -769,3 +769,23 @@
   .transport-btn { min-width:26px !important; }
   .playlist-body { grid-template-columns:116px minmax(0,1fr); }
 }
+
+/* V6.2 instrument touch keyboard */
+.touch-piano {
+  display:grid; grid-template-columns:repeat(24,minmax(25px,1fr));
+  gap:2px; min-width:720px; height:190px; padding:12px 4px;
+  overflow-x:auto; background:#182638; border:1px solid #536d8b; border-radius:5px;
+}
+.piano-key {
+  min-width:25px; height:164px; align-self:start;
+  border:1px solid #71869e; border-radius:0 0 4px 4px;
+  background:linear-gradient(180deg,#fff,#d8e2ed); color:#1a2b3d;
+  font-size:9px; font-weight:700; touch-action:none;
+}
+.piano-key.black-key {
+  height:104px; margin:0 -5px; z-index:2; position:relative;
+  background:linear-gradient(180deg,#43536a,#111b29); color:#fff;
+  border-color:#0a111b;
+}
+.piano-key:active { filter:brightness(1.22); transform:translateY(2px); }
+@media(max-width:600px) { .touch-piano { height:166px; } .piano-key { height:140px; } .piano-key.black-key { height:88px; } }
