@@ -1,13 +1,13 @@
 {
-  "name": "MUSICTOOL DAW V7.0.1",
-  "short_name": "MUSICTOOL V7.0.1",
-  "description": "MUSICTOOL DAW V7.0.1 — mobile multitrack audio workstation with MIDI clips, sample library and independent channel strips.",
-  "start_url": "./index.html?v=7.0.1",
+  "name": "MUSICTOOL DAW V7.1",
+  "short_name": "MUSICTOOL V7.1",
+  "description": "MUSICTOOL DAW V7.1 — mobile multitrack studio with MIDI, samples, tuner, metronome and music study tools.",
+  "start_url": "./index.html?v=7.1",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
+  "background_color": "#10141b",
+  "theme_color": "#10141b",
   "icons": [
     {
       "src": "assets/mascot.svg",
