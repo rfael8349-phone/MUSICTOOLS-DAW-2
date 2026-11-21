@@ -52,6 +52,7 @@ export async function play() {
 }
 
 export function pause() {
+  if (recordStarting) recordStartToken++;
   if (!state.isPlaying) return;
   state.isPlaying = false;
   stopAll();
