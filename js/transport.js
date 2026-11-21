@@ -13,6 +13,7 @@ let recordStartSec = 0;
 let recordArmedTrack = null;
 let localRecTimer = null;
 let recordStarting = false;
+let recordStartToken = 0;
 
 const bpmEl = () => document.getElementById('tempo-val');
 const timeEl = () => document.getElementById('display-time');
@@ -63,6 +64,7 @@ export function pause() {
 }
 
 export function stop() {
+  if (recordStarting) recordStartToken++;
   pause();
   if (state.isRecording) stopRecord();
   state.playhead = 0;
@@ -90,6 +92,7 @@ export async function startRecord() {
   }
 
   recordStarting = true;
+  const startToken = ++recordStartToken;
   recBtn().classList.add('counting-in');
   recBtn().title = 'Count-in…';
 
@@ -116,9 +119,14 @@ export async function startRecord() {
     }
 
     await new Promise((resolve) => setTimeout(resolve, beats * beatDuration * 1000));
+    if (startToken !== recordStartToken || !state.isPlaying) return;
 
     // The backing track has continued throughout the count-in.
     await startRecording({ monitor: true });
+    if (startToken !== recordStartToken || !state.isPlaying) {
+      await stopRecording();
+      return;
+    }
     recordArmedTrack = track;
     state.recordArmedTrackId = track.id;
     recordStartSec = state.playhead;
