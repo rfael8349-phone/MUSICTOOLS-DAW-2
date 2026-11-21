@@ -127,8 +127,20 @@ function renderTrackHeader(track) {
   // Tap-to-rename on mobile
   name.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (Date.now() - (name._t || 0) < 400) renameTrack(track, meta, name);
-    name._t = Date.now();
+    const now = Date.now();
+    if (now - (name._t || 0) < 400) {
+      renameTrack(track, meta, name);
+    } else {
+      // A tap on the track name must select the whole lane just like a tap
+      // on the rest of its header. Update in place so a second tap can rename.
+      state.selectedTrackId = track.id;
+      for (const t of state.tracks) t.armed = t.id === track.id;
+      document.querySelectorAll('.track-header').forEach(header => {
+        header.classList.toggle('selected', header.dataset.id === track.id);
+      });
+      saveProject();
+    }
+    name._t = now;
   });
 
   const ctr = document.createElement('div');
