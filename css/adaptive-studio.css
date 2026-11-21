@@ -38,17 +38,57 @@ body[data-workspace="desktop"] .transport-btn{min-width:42px;min-height:38px}
 @media(min-width:701px) and (max-width:1100px){#topbar{gap:9px}.brand-text{display:flex}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
-/* V7.4 — mobile safe areas and responsive 4x4 performance pads */
-#app{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
-#topbar{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}
-#bottomnav{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);padding-bottom:env(safe-area-inset-bottom)}
-#view-launchpad{min-width:0;min-height:0;overflow:auto}
-#view-launchpad .creative-view{width:100%;max-width:920px;margin-inline:auto;padding:clamp(8px,2vw,18px);box-sizing:border-box}
+/* V7.4 — safe-area layout and viewport-fitted 4x4 performance pads.
+   Safe-area insets belong inside the top/bottom bars, not as padding on #app:
+   padding the grid container itself used to create oversized empty edges. */
+#app{
+  padding:0;
+  grid-template-rows:
+    calc(var(--topbar-h) + env(safe-area-inset-top))
+    38px
+    minmax(0,1fr)
+    calc(var(--nav-h) + env(safe-area-inset-bottom));
+}
+#topbar{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top);
+  padding-left:max(8px,env(safe-area-inset-left));
+  padding-right:max(8px,env(safe-area-inset-right));
+}
+#bottomnav{
+  box-sizing:border-box;
+  padding-left:env(safe-area-inset-left);
+  padding-right:env(safe-area-inset-right);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+#view-launchpad{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}
+#view-launchpad .creative-view{width:100%;max-width:920px;min-height:100%;margin-inline:auto;padding:clamp(6px,1.6vw,16px);box-sizing:border-box;display:flex;flex-direction:column}
 #view-launchpad .creative-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
-#view-launchpad .launchpad-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(6px,1.5vw,12px);width:100%;max-width:760px;margin:12px auto}
-#view-launchpad .launchpad-pad{width:100%;min-width:0;min-height:clamp(64px,16vw,132px);aspect-ratio:1.15;white-space:normal;overflow-wrap:anywhere;touch-action:manipulation}
+#view-launchpad .launchpad-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-rows:repeat(4,minmax(0,1fr));
+  gap:clamp(5px,1.25vw,10px);
+  width:min(100%,760px);
+  margin:clamp(6px,1.5vh,12px) auto;
+}
+#view-launchpad .launchpad-pad{
+  width:100%;min-width:0;min-height:0;aspect-ratio:1.15;
+  max-height:clamp(54px,17vh,132px);
+  padding:clamp(4px,1vw,10px);
+  white-space:normal;overflow-wrap:anywhere;touch-action:manipulation;
+}
 #view-launchpad .launchpad-pad.hit{transform:scale(.96);filter:brightness(1.35);box-shadow:0 0 22px color-mix(in srgb,var(--cyan) 38%,transparent)}
 .channel-editor-window{max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);overflow:auto}
-@media(max-width:520px){#view-launchpad .launchpad-pad{min-height:clamp(58px,19vw,92px);font-size:clamp(10px,2.7vw,13px)}#view-launchpad .creative-heading{font-size:clamp(15px,4vw,20px)}}
-@media(orientation:landscape) and (max-height:520px){#view-launchpad .creative-view{padding:6px}#view-launchpad .launchpad-grid{max-width:680px;gap:6px;margin:6px auto}#view-launchpad .launchpad-pad{min-height:clamp(48px,17vh,78px);aspect-ratio:1.5}#view-launchpad .creative-heading{margin:2px 0;font-size:15px}}
+@media(max-width:520px){
+  #view-launchpad .launchpad-pad{font-size:clamp(9px,2.5vw,13px)}
+  #view-launchpad .creative-heading{font-size:clamp(15px,4vw,20px)}
+}
+@media(orientation:landscape) and (max-height:520px){
+  #view-launchpad .creative-view{padding:4px}
+  #view-launchpad .creative-heading{margin:2px 0;font-size:14px}
+  #view-launchpad .launchpad-grid{width:min(100%,680px);gap:5px;margin:4px auto}
+  #view-launchpad .launchpad-pad{max-height:clamp(38px,15vh,70px);aspect-ratio:1.7;font-size:10px}
+  #device-tools{min-height:30px;padding-block:2px}
+}
 @media(prefers-reduced-motion:reduce){#view-launchpad .launchpad-pad.hit{transform:none}}
