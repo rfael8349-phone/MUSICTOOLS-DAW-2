@@ -1,11 +1,10 @@
-// Transport controls: play / stop / record / rewind, metronome, tempo,
-// count-in. Owns the scheduler loop.
+// Transport controls: play / stop / record / rewind, metronome and count-in.
 
 import { state } from './state.js';
 import {
   getContext, resume, schedulePlayback, stopAll, playClick, nowSec
 } from './audio-engine.js';
-import { startRecording, stopRecording } from './recorder.js';
+import { requestMic, startRecording, stopRecording } from './recorder.js';
 import { onTransportTick, renderPlayhead } from './playlist.js';
 import { saveProject } from './storage.js';
 
@@ -13,6 +12,7 @@ let schedulerTimer = null;
 let recordStartSec = 0;
 let recordArmedTrack = null;
 let localRecTimer = null;
+let recordStarting = false;
 
 const bpmEl = () => document.getElementById('tempo-val');
 const timeEl = () => document.getElementById('display-time');
@@ -40,17 +40,14 @@ export async function play() {
 
   const startFrom = state.playhead;
   schedulePlayback(startFrom, 300);
-  scheduleMetronome(startFrom);
+  if (state.metronome) scheduleMetronome(startFrom);
 
-  const ctx = getContext();
-  const ctxStart = ctx.currentTime;
   const audioStart = nowSec();
-
   schedulerTimer = setInterval(() => {
     const elapsed = nowSec() - audioStart;
     state.playhead = startFrom + elapsed;
     onTransportTick(state.playhead);
-  }, 30);
+  }, 20);
 }
 
 export function pause() {
@@ -59,8 +56,10 @@ export function pause() {
   stopAll();
   stopMetronome();
   if (schedulerTimer) { clearInterval(schedulerTimer); schedulerTimer = null; }
-  playBtn().textContent = '▶';
-  playBtn().classList.remove('active');
+  if (playBtn()) {
+    playBtn().textContent = '▶';
+    playBtn().classList.remove('active');
+  }
 }
 
 export function stop() {
@@ -79,35 +78,66 @@ export function rewind() {
   if (state.isPlaying) { pause(); play(); }
 }
 
-// ---- Record ----
+// ---- Record with one-bar count-in ----
+// The backing track starts immediately. Four metronome beats are counted
+// while it plays; microphone capture begins on the next bar.
 export async function startRecord() {
-  if (state.isRecording) return;
+  if (state.isRecording || recordStarting) return;
   const track = state.tracks.find((t) => t.armed) || state.tracks.find((t) => t.kind === 'audio');
   if (!track) {
     toast('Arm an audio track first');
     return;
   }
+
+  recordStarting = true;
+  recBtn().classList.add('counting-in');
+  recBtn().title = 'Count-in…';
+
+  let startedTransportHere = false;
   try {
+    // Request permission immediately from the Record tap, before other awaits.
+    const micPermission = requestMic();
     await resume();
+    await micPermission;
+
+    if (!state.isPlaying) {
+      await play();
+      startedTransportHere = true;
+    }
+
+    const ctx = getContext();
+    const beats = Math.max(1, Number(state.timeSig?.[0]) || 4);
+    const beatDuration = 60 / state.bpm;
+    const firstClick = ctx.currentTime + 0.06;
+
+    // Schedule the count-in against the Web Audio clock, not setInterval.
+    for (let i = 0; i < beats; i++) {
+      playClick(firstClick + i * beatDuration, i === 0);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, beats * beatDuration * 1000));
+
+    // The backing track has continued throughout the count-in.
     await startRecording({ monitor: true });
+    recordArmedTrack = track;
+    state.recordArmedTrackId = track.id;
+    recordStartSec = state.playhead;
+    state.isRecording = true;
+    recBtn().classList.add('active');
+
+    localRecTimer = setInterval(() => {
+      if (timeEl()) timeEl().textContent = fmtTime(state.playhead);
+    }, 50);
+    toast('Recording started');
   } catch (err) {
-    toast('Microphone access denied');
-    return;
+    console.error('Record start failed:', err);
+    if (startedTransportHere) pause();
+    toast(err?.message?.includes('getUserMedia') ? 'Microphone permission required' : 'Could not start recording');
+  } finally {
+    recordStarting = false;
+    recBtn().classList.remove('counting-in');
+    recBtn().title = 'Record';
   }
-
-  recordArmedTrack = track;
-  state.recordArmedTrackId = track.id;
-  state.isRecording = true;
-  recBtn().classList.add('active');
-
-  // start transport at current playhead
-  await play();
-  recordStartSec = state.playhead;
-
-  // update time display frequently
-  localRecTimer = setInterval(() => {
-    if (timeEl()) timeEl().textContent = fmtTime(state.playhead);
-  }, 50);
 }
 
 export async function stopRecord() {
@@ -116,8 +146,8 @@ export async function stopRecord() {
   recBtn().classList.remove('active');
   if (localRecTimer) { clearInterval(localRecTimer); localRecTimer = null; }
 
-  const stopSec = state.playhead;
   const result = await stopRecording();
+  const stopSec = state.playhead;
   pause();
 
   if (!result.wavBlob || !result.audioBuffer) {
@@ -126,12 +156,9 @@ export async function stopRecord() {
   }
 
   const lengthSec = result.audioBuffer.duration;
-  const startSec = recordStartSec;
-
-  // insert clip into armed track
   const clip = {
     id: 'clip_' + Date.now().toString(36),
-    startSec,
+    startSec: recordStartSec,
     lengthSec,
     kind: 'audio',
     blob: result.wavBlob,
@@ -140,8 +167,7 @@ export async function stopRecord() {
   };
   recordArmedTrack.clips.push(clip);
 
-  // update UI
-  onTransportTick(state.playhead);
+  onTransportTick(stopSec);
   const { refreshAll } = await import('./playlist.js');
   refreshAll();
   await saveProject();
@@ -151,7 +177,6 @@ export async function stopRecord() {
 // ---- Metronome ----
 let metroTimer = null;
 let nextClickTime = 0;
-let clickCount = 0;
 
 export function toggleMetronome() {
   state.metronome = !state.metronome;
@@ -161,23 +186,18 @@ export function toggleMetronome() {
 }
 
 function scheduleMetronome(fromSec) {
-  getContext();
   stopMetronome();
   const ctx = getContext();
   const beatDur = 60 / state.bpm;
-  const beatsPerBar = state.timeSig[0];
-  const startBeat = Math.ceil(fromSec / beatDur);
-  let beat = startBeat;
+  const beatsPerBar = Math.max(1, Number(state.timeSig?.[0]) || 4);
+  let beat = Math.ceil(fromSec / beatDur);
   const t0 = ctx.currentTime;
-  const nextT = () => t0 + (beat * beatDur - fromSec);
-  nextClickTime = nextT();
-  clickCount = beat % beatsPerBar;
+  nextClickTime = t0 + Math.max(0, beat * beatDur - fromSec);
 
   metroTimer = setInterval(() => {
     const ctx2 = getContext();
     while (nextClickTime < ctx2.currentTime + 0.15) {
-      const accent = (beat % beatsPerBar) === 0;
-      try { playClick(nextClickTime, accent); } catch {}
+      playClick(nextClickTime, (beat % beatsPerBar) === 0);
       beat++;
       nextClickTime = t0 + (beat * beatDur - fromSec);
     }
@@ -199,6 +219,7 @@ export function fmtTime(sec) {
 
 export function toast(msg) {
   const el = document.getElementById('toast');
+  if (!el) return;
   el.textContent = msg;
   el.classList.remove('hidden');
   clearTimeout(toast._t);
