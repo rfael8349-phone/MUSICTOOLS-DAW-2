@@ -148,6 +148,11 @@ export function refreshAll() {
 function renderHeaders() {
   const host = document.getElementById('track-headers');
   host.innerHTML = '';
+  // Keep the track labels aligned with the 24px timeline ruler.
+  const rulerSpacer = document.createElement('div');
+  rulerSpacer.className = 'track-ruler-spacer';
+  rulerSpacer.setAttribute('aria-hidden', 'true');
+  host.appendChild(rulerSpacer);
   for (const track of state.tracks) {
     host.appendChild(renderTrackHeader(track));
   }
