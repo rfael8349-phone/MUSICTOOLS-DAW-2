@@ -64,16 +64,16 @@ export function mount() {
     toast(state.snap ? 'Snap ON' : 'Snap OFF');
   });
 
-  document.getElementById('btn-add-track').addEventListener('click', () => {
-    createTrack('audio');
+  const addAudioTrack = () => {
+    const track = createTrack('audio');
+    state.selectedTrackId = track.id;
     refreshAll();
+    renderMixer();
     saveProject();
-  });
-  document.getElementById('btn-add-audio-track').addEventListener('click', () => {
-    createTrack('audio');
-    refreshAll();
-    saveProject();
-  });
+    toast(`Created and selected "${track.name}"`);
+  };
+  document.getElementById('btn-add-track').addEventListener('click', addAudioTrack);
+  document.getElementById('btn-add-audio-track').addEventListener('click', addAudioTrack);
 
   refreshAll();
 }
@@ -202,13 +202,18 @@ function renderTrackHeader(track) {
     saveProject();
   };
   const recBtn = mkToggle('●', 'rec', track.armed);
+  recBtn.title = track.armed ? 'Disarm recording on this track' : 'Arm this track for recording';
+  recBtn.setAttribute('aria-label', recBtn.title);
   recBtn.onclick = (e) => {
     e.stopPropagation();
-    // only one armed at a time
+    // Toggle this track; never leave several tracks armed simultaneously.
+    const shouldArm = !track.armed;
     for (const t of state.tracks) t.armed = false;
-    track.armed = !track.armed;
+    track.armed = shouldArm;
+    state.selectedTrackId = track.id;
     refreshAll();
     saveProject();
+    toast(shouldArm ? `Recording armed: ${track.name}` : 'Recording disarmed');
   };
 
   ctr.append(muteBtn, soloBtn, recBtn);
