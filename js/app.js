@@ -14,7 +14,8 @@ const byId = (id) => document.getElementById(id);
 
 function wireTransport() {
   byId('btn-play').addEventListener('click', () => {
-    if (state.isPlaying) transport.pause();
+    if (state.isRecording) transport.stopRecord().catch((err) => showBootError(err));
+    else if (state.isPlaying) transport.pause();
     else transport.play().catch((err) => showBootError(err));
   });
   byId('btn-stop').addEventListener('click', () => transport.stop());
