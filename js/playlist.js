@@ -6,6 +6,7 @@ import { fmtTime } from './transport.js';
 import { updateChannel, ensureChannel, computePeaks, setMasterVolume } from './audio-engine.js';
 import { saveProject } from './storage.js';
 import { toast } from './transport.js';
+import { openChannelEditor, renderMixer as renderStudioMixer } from './studio.js';
 
 const PX_PER_SEC = () => state.zoom; // 40..200
 
@@ -78,67 +79,7 @@ export function mount() {
   refreshAll();
 }
 
-export function renderMixer() {
-  const host = document.getElementById('mixer-strips');
-  if (!host) return;
-  host.innerHTML = '';
-  const input = document.createElement('section');
-  input.className = 'mixer-input';
-  const title = document.createElement('strong');
-  title.textContent = 'INPUT GAIN · RECORD (SAFE RANGE)';
-  const value = document.createElement('output');
-  value.textContent = `${Number(state.inputGainDb || 0).toFixed(1)} dB`;
-  const slider = document.createElement('input');
-  slider.type = 'range'; slider.min = '-12'; slider.max = '12'; slider.step = '0.5';
-  slider.value = String(state.inputGainDb || 0);
-  slider.addEventListener('input', () => {
-    state.inputGainDb = Number(slider.value);
-    value.textContent = `${state.inputGainDb.toFixed(1)} dB`;
-    saveProject().catch(console.error);
-  });
-  const hint = document.createElement('small');
-  hint.textContent = 'Ganancia de grabación: -12 a +12 dB. Sube poco a poco y evita saturación.';
-  input.append(title, value, slider, hint);
-  host.appendChild(input);
-
-  const master = document.createElement('section');
-  master.className = 'mixer-input';
-  const masterTitle = document.createElement('strong');
-  masterTitle.textContent = 'MASTER OUTPUT';
-  const masterValue = document.createElement('output');
-  masterValue.textContent = Math.round((state.masterVolume ?? 0.9) * 100) + '%';
-  const masterSlider = document.createElement('input');
-  masterSlider.type = 'range';
-  masterSlider.min = '0';
-  masterSlider.max = '1.5';
-  masterSlider.step = '0.01';
-  masterSlider.value = String(state.masterVolume ?? 0.9);
-  masterSlider.addEventListener('input', () => {
-    setMasterVolume(masterSlider.value);
-    masterValue.textContent = Math.round(state.masterVolume * 100) + '%';
-  });
-  masterSlider.addEventListener('change', () => saveProject().catch(console.error));
-  master.append(masterTitle, masterValue, masterSlider);
-  host.appendChild(master);
-
-  for (const track of state.tracks) {
-    updateChannel(track);
-    const strip = document.createElement('section');
-    strip.className = 'mixer-strip';
-    const name = document.createElement('strong'); name.textContent = track.name;
-    const volLabel = document.createElement('label'); volLabel.textContent = 'Volume';
-    const vol = document.createElement('input'); vol.type = 'range'; vol.min = '0'; vol.max = '1.5'; vol.step = '0.01'; vol.value = String(track.volume ?? 1);
-    const volOut = document.createElement('output'); volOut.textContent = `${Math.round((track.volume ?? 1) * 100)}%`;
-    vol.addEventListener('input', () => { track.volume = Number(vol.value); volOut.textContent = `${Math.round(track.volume * 100)}%`; updateChannel(track); });
-    vol.addEventListener('change', () => saveProject().catch(console.error));
-    const panLabel = document.createElement('label'); panLabel.textContent = 'Pan';
-    const pan = document.createElement('input'); pan.type = 'range'; pan.min = '-1'; pan.max = '1'; pan.step = '0.01'; pan.value = String(track.pan ?? 0);
-    pan.addEventListener('input', () => { track.pan = Number(pan.value); updateChannel(track); });
-    pan.addEventListener('change', () => saveProject().catch(console.error));
-    strip.append(name, volLabel, vol, volOut, panLabel, pan);
-    host.appendChild(strip);
-  }
-}
+export function renderMixer() { renderStudioMixer(); }
 
 export function refreshAll() {
   renderHeaders();
@@ -221,7 +162,11 @@ function renderTrackHeader(track) {
     toast(shouldArm ? `Recording armed: ${track.name}` : 'Recording disarmed');
   };
 
-  ctr.append(muteBtn, soloBtn, recBtn);
+  const channelBtn = mkToggle('CH', 'channel', false);
+  channelBtn.title = 'Open independent channel studio';
+  channelBtn.setAttribute('aria-label', 'Open channel studio for ' + track.name);
+  channelBtn.onclick = (e) => { e.stopPropagation(); openChannelEditor(track.id); };
+  ctr.append(muteBtn, soloBtn, recBtn, channelBtn);
   meta.append(name, ctr);
 
   const actions = document.createElement('div');

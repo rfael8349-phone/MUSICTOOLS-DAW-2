@@ -130,7 +130,7 @@ export async function startRecord() {
 
     // The backing track has continued throughout the four-beat count-in.
     // Recording uses count-in only; the continuous metronome stays off.
-    await startRecording({ monitor: false, inputGainDb: state.inputGainDb ?? 0 });
+    await startRecording({ monitor: false, inputGainDb: track.inputGainDb ?? state.inputGainDb ?? 0 });
     if (startToken !== recordStartToken || !state.isPlaying) {
       await stopRecording();
       return;
