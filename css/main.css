@@ -1165,3 +1165,7 @@ body::before{display:none}
  .theme-picker select{max-width:86px;min-width:72px}
  .playlist-body{grid-template-columns:126px 1fr}
 }
+
+.creative-toolbar .btn{min-height:31px;padding:5px 8px;font-size:10px;border-radius:8px}
+.instrument-toolbar .btn{min-height:31px;padding:5px 8px;font-size:10px;border-radius:8px}
+.studio-card .studio-select{width:100%;max-width:100%;min-height:40px}
