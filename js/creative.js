@@ -7,12 +7,12 @@ import { toast } from './transport.js';
 
 const $ = id => document.getElementById(id);
 const held = new Map();
-let octave = 4, tone = 'synth', qwerty = false, theme = 'xp';
+let octave = 4, tone = 'piano', qwerty = false, theme = 'xp';
 let pattern = Array.from({length:10},()=>Array(16).fill(false));
 let patternTimer = null, patternStep = 0, patternBpm = 100, drumStyle = 'CUMBIA', drumPatternInitialized = false;
 let midiCapture = null;
 const activeCaptureNotes = new Map();
-const tones = [['synth','SYNTH'],['guitar','GUITAR'],['bass','BASS']];
+const tones = [['piano','PIANO'],['guitar','GUITAR'],['bass','BASS'],['synth','SYNTH']];
 const drumRows = [['KICK',36],['SNARE',38],['CLOSED HAT',42],['OPEN HAT',46],['CLAP',39],['LOW TOM',45],['MID TOM',47],['HIGH TOM',48],['CRASH',49],['RIDE',51]];
 const keyMap = {a:0,w:1,s:2,e:3,d:4,f:5,t:6,g:7,y:8,h:9,u:10,j:11,k:12,o:13,l:14,p:15};
 
@@ -94,8 +94,8 @@ function renderDrums(host){
  const importLabel=node('label','btn','IMPORTAR SAMPLES WAV / MP3');importLabel.htmlFor='sample-file';host.append(importLabel);
 }
 function renderThemes(){
- const themes=[['xp','Windows XP'],['classic','Classic Studio'],['dark','Studio Dark'],['winamp','Winamp Retro'],['analog','Analog 80s'],['modern','Modern Studio'],['fl','Color Beat'],['minimal','Media Minimal'],['cyber','Cyber Neon'],['metal','Industrial Metal']];
- const box=node('div','theme-picker');const label=node('strong','','APARIENCIA');const select=node('select','studio-select');
+ const themes=[['xp','Windows 11 · Soft Blue'],['classic','Classic Studio'],['dark','Studio Dark'],['winamp','Winamp Retro'],['analog','Analog 80s'],['modern','Modern Studio'],['fl','Color Beat'],['minimal','Media Minimal'],['cyber','Cyber Neon'],['metal','Industrial Metal']];
+ const box=node('div','theme-picker');const label=node('strong','','TEMA');const select=node('select','studio-select');select.setAttribute('aria-label','Paleta de colores');
  themes.forEach(([v,l])=>{const o=node('option','',l);o.value=v;select.append(o);});select.value=theme;
  select.onchange=()=>{theme=select.value;document.documentElement.dataset.theme=theme;localStorage.setItem('musictool-theme',theme);};
  box.append(label,select);return box;
