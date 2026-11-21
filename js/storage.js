@@ -47,7 +47,7 @@ export async function saveProject() {
     projectId: state.projectId, projectName: state.projectName, bpm: state.bpm,
     timeSig: state.timeSig, snap: state.snap, zoom: state.zoom,
     selectedTrackId: state.selectedTrackId, selectedClipId: state.selectedClipId,
-    metronome: state.metronome, playhead: state.playhead, version: 5,
+    metronome: state.metronome, inputGainDb: state.inputGainDb ?? 0, playhead: state.playhead, version: 5,
     tracks: state.tracks.map(track => ({
       ...track, input: null, takes: [],
       clips: track.clips.map(({ audioBuffer, blob, ...clip }) => clip)
