@@ -1,7 +1,7 @@
 // V5.3 sample browser: import, preview and place audio files on the playlist.
 import { state, createTrack, addClip } from './state.js';
 import { decodeAudio, getContext, resume } from './audio-engine.js';
-import { saveProject } from './storage.js';
+import { saveProject, saveSampleAsset, listSampleAssets, deleteSampleAsset } from './storage.js';
 import { refreshAll } from './playlist.js';
 import { toast } from './transport.js';
 
@@ -9,17 +9,21 @@ let samples = [];
 let previewSource = null;
 let mounted = false;
 
-export function mountSamples() {
+export async function mountSamples() {
   const picker = document.getElementById('sample-file');
   if (!picker || mounted) return;
   mounted = true;
+  try {
+    const saved=await listSampleAssets();
+    for(const item of saved){try{const buffer=await decodeAudio(await item.blob.arrayBuffer());samples.push({id:item.id,name:item.name,blob:item.blob,buffer,trimStart:0,trimEnd:buffer.duration});}catch(error){console.warn('No se pudo restaurar sample',item.name,error);}}
+  } catch(error){console.warn('Biblioteca local no disponible',error);}
   picker.addEventListener('change', async () => {
     const files = Array.from(picker.files || []);
     for (const file of files) {
       if (!file.type.startsWith('audio/') && !/\.(wav|mp3|m4a|aac|ogg|flac)$/i.test(file.name)) continue;
       try {
         const buffer = await decodeAudio(await file.arrayBuffer());
-        samples.push({ id: 'sample_' + Date.now().toString(36) + '_' + samples.length, name: file.name, blob: file, buffer, trimStart: 0, trimEnd: buffer.duration });
+        const sample={ id: 'sample_' + Date.now().toString(36) + '_' + samples.length, name: file.name, blob: file, buffer, trimStart: 0, trimEnd: buffer.duration }; samples.push(sample); try{await saveSampleAsset(sample.id,sample.name,file);}catch(error){console.warn('No se pudo guardar el sample',error);toast('Sample importado, pero no quedó guardado offline');}
       } catch (error) {
         console.error('Sample import failed', error);
         toast('No se pudo abrir: ' + file.name);
@@ -58,12 +62,15 @@ function renderSamples() {
     preview.textContent = '▶';
     preview.title = 'Escuchar sample';
     preview.addEventListener('click', () => playPreview(sample));
+    const remove = document.createElement('button');
+    remove.className = 'btn'; remove.type = 'button'; remove.textContent = '×'; remove.title = 'Eliminar de biblioteca';
+    remove.addEventListener('click', async () => { samples=samples.filter(item=>item.id!==sample.id); try{await deleteSampleAsset(sample.id);}catch(error){console.warn(error);} renderSamples(); });
     const add = document.createElement('button');
     add.className = 'btn accent';
     add.type = 'button';
     add.textContent = '+ PISTA';
     add.addEventListener('click', () => placeSample(sample));
-    row.append(info, preview, add);
+    row.append(info, preview, add, remove);
     const trim=document.createElement('div');trim.className='sample-trim';
     const startLabel=document.createElement('label');startLabel.textContent='INICIO '+sample.trimStart.toFixed(2)+' s';
     const start=document.createElement('input');start.type='range';start.min='0';start.max=String(Math.max(.01,sample.buffer.duration-.02));start.step='.01';start.value=String(sample.trimStart);
