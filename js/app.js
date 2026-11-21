@@ -4,6 +4,7 @@ import * as transport from './transport.js';
 import * as playlist from './playlist.js';
 import { saveProject, loadProject } from './storage.js';
 import { resume } from './audio-engine.js';
+import { mountSamples } from './samples.js';
 
 const byId = (id) => document.getElementById(id);
 
@@ -48,6 +49,7 @@ function wireNavigation() {
       document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b === btn));
       document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.dataset.view === target));
       if (target === 'playlist') playlist.refreshAll();
+      if (target === 'samples') mountSamples();
       if (target === 'mixer') playlist.renderMixer();
     });
   }

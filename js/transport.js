@@ -41,7 +41,7 @@ export async function play() {
 
   const startFrom = state.playhead;
   schedulePlayback(startFrom, 300);
-  if (state.metronome) scheduleMetronome(startFrom);
+  if (state.metronome && !recordStarting) scheduleMetronome(startFrom);
 
   const audioStart = nowSec();
   schedulerTimer = setInterval(() => {
@@ -110,7 +110,7 @@ export async function startRecord() {
     }
 
     const ctx = getContext();
-    const beats = Math.max(1, Number(state.timeSig?.[0]) || 4);
+    const beats = 4;
     const beatDuration = 60 / state.bpm;
     const firstClick = ctx.currentTime + 0.06;
 
@@ -122,7 +122,8 @@ export async function startRecord() {
     await new Promise((resolve) => setTimeout(resolve, beats * beatDuration * 1000));
     if (startToken !== recordStartToken || !state.isPlaying) return;
 
-    // The backing track has continued throughout the count-in.
+    // The backing track has continued throughout the four-beat count-in.
+    // Recording uses count-in only; the continuous metronome stays off.
     await startRecording({ monitor: true, inputGainDb: state.inputGainDb ?? 0 });
     if (startToken !== recordStartToken || !state.isPlaying) {
       await stopRecording();
@@ -190,8 +191,8 @@ let nextClickTime = 0;
 export function toggleMetronome() {
   state.metronome = !state.metronome;
   document.getElementById('btn-metro').classList.toggle('active', state.metronome);
-  if (state.metronome && state.isPlaying) scheduleMetronome(state.playhead);
-  if (!state.metronome) stopMetronome();
+  if (state.metronome && state.isPlaying && !state.isRecording && !recordStarting) scheduleMetronome(state.playhead);
+  if (!state.metronome || state.isRecording || recordStarting) stopMetronome();
 }
 
 function scheduleMetronome(fromSec) {

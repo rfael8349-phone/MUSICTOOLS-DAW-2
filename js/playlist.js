@@ -3,7 +3,7 @@
 
 import { state, createTrack, newId, findTrack, removeTrack, removeClip, addClip, songDuration } from './state.js';
 import { fmtTime } from './transport.js';
-import { updateChannel, ensureChannel, computePeaks } from './audio-engine.js';
+import { updateChannel, ensureChannel, computePeaks, setMasterVolume } from './audio-engine.js';
 import { saveProject } from './storage.js';
 import { toast } from './transport.js';
 
@@ -85,11 +85,11 @@ export function renderMixer() {
   const input = document.createElement('section');
   input.className = 'mixer-input';
   const title = document.createElement('strong');
-  title.textContent = 'INPUT GAIN';
+  title.textContent = 'INPUT GAIN · RECORD';
   const value = document.createElement('output');
   value.textContent = `${Number(state.inputGainDb || 0).toFixed(1)} dB`;
   const slider = document.createElement('input');
-  slider.type = 'range'; slider.min = '-12'; slider.max = '18'; slider.step = '0.5';
+  slider.type = 'range'; slider.min = '-12'; slider.max = '36'; slider.step = '0.5';
   slider.value = String(state.inputGainDb || 0);
   slider.addEventListener('input', () => {
     state.inputGainDb = Number(slider.value);
@@ -97,9 +97,29 @@ export function renderMixer() {
     saveProject().catch(console.error);
   });
   const hint = document.createElement('small');
-  hint.textContent = 'Ajusta la señal que entra al grabar. Vigila que no distorsione.';
+  hint.textContent = 'Ganancia de grabación: -12 a +36 dB. Sube poco a poco y evita saturación.';
   input.append(title, value, slider, hint);
   host.appendChild(input);
+
+  const master = document.createElement('section');
+  master.className = 'mixer-input';
+  const masterTitle = document.createElement('strong');
+  masterTitle.textContent = 'MASTER OUTPUT';
+  const masterValue = document.createElement('output');
+  masterValue.textContent = Math.round((state.masterVolume ?? 0.9) * 100) + '%';
+  const masterSlider = document.createElement('input');
+  masterSlider.type = 'range';
+  masterSlider.min = '0';
+  masterSlider.max = '1.5';
+  masterSlider.step = '0.01';
+  masterSlider.value = String(state.masterVolume ?? 0.9);
+  masterSlider.addEventListener('input', () => {
+    setMasterVolume(masterSlider.value);
+    masterValue.textContent = Math.round(state.masterVolume * 100) + '%';
+  });
+  masterSlider.addEventListener('change', () => saveProject().catch(console.error));
+  master.append(masterTitle, masterValue, masterSlider);
+  host.appendChild(master);
 
   for (const track of state.tracks) {
     updateChannel(track);
