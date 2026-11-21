@@ -82,9 +82,16 @@ export function playInstrumentNote(type,note,velocity=.8){
  const gain=ctx.createGain();gain.gain.setValueAtTime(.0001,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(Math.max(.02,Math.min(1,velocity))*.18,ctx.currentTime+.012);
  let source;
  if(type.startsWith('drum')){
-  source=ctx.createOscillator();source.type='sine';source.frequency.setValueAtTime(note===36?120:note===38?190:note===42?900:260,ctx.currentTime);source.frequency.exponentialRampToValueAtTime(45,ctx.currentTime+.18);gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.28);
+  source=ctx.createOscillator();source.type='sine';
+  const drumFreq={36:125,38:185,39:240,42:920,46:1250,45:115,47:145,48:175,49:1500,51:1750,37:650,50:205,43:95,52:1300,55:1100,57:1650};
+  const base=drumFreq[note]||260;
+  source.frequency.setValueAtTime(base,ctx.currentTime);
+  source.frequency.exponentialRampToValueAtTime(note===36?42:Math.max(70,base*.35),ctx.currentTime+.18);
+  gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.28);
  }else{
-  source=ctx.createOscillator();source.type=type==='pad'?'triangle':'sawtooth';source.frequency.value=440*Math.pow(2,(note-69)/12);
+  source=ctx.createOscillator();
+  source.type=type==='pad'?'triangle':type==='bass'?'square':type==='guitar'?'triangle':'sawtooth';
+  source.frequency.value=440*Math.pow(2,(note-69)/12);
  }
  source.connect(gain);gain.connect(master);source.start();if(type.startsWith('drum'))source.stop(ctx.currentTime+.3);
  voices.set(key,{source,gain});
