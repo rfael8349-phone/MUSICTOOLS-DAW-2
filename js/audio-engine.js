@@ -142,11 +142,6 @@ const sample=(base,path)=>base+path;
 const pianoNotes=['C','Cs','D','Ds','E','F','Fs','G','Gs','A','As','B'];
 function sampleNoteName(note){return pianoNotes[((note%12)+12)%12]+(Math.floor(note/12)-1);}
 function pianoUrl(note,layer=3){return sample(META,'meta-piano/ogg/INSPiano_Vel0'+layer+'_'+sampleNoteName(note)+'_01.ogg');}
-function velocityLayer(velocity,layers=4){
- const v=Math.max(0,Math.min(1,Number(velocity)||.8));
- if(layers===4)return v<.25?1:v<.5?2:v<.88?3:4;
- return v<.35?1:v<.72?2:3;
-}
 const pianoMap=Array.from({length:88},(_,i)=>{const note=21+i;return [note,pianoUrl(note,3)];});
 const acousticZones=[
  {root:40,max:60,id:'StringLowE'},{root:45,max:65,id:'StringA'},
