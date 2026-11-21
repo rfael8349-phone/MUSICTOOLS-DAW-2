@@ -293,7 +293,7 @@
 /* ---------- BOTTOM NAV ---------- */
 #bottomnav {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   background: linear-gradient(180deg, var(--bg-2) 0%, #0a0a12 100%);
   border-top: 1px solid var(--border);
 }
@@ -681,7 +681,7 @@
   #topbar { padding-left:8px; padding-right:8px; }
   .playlist-body { grid-template-columns:176px minmax(0,1fr); }
   .track-header,.track-lane { height:50px; min-height:50px; }
-  #bottomnav { grid-template-columns:repeat(6,minmax(0,1fr)); }
+  #bottomnav { grid-template-columns:repeat(7,minmax(0,1fr)); }
 }
 
 /* Keep the phone-first touch layout intact in portrait. */
