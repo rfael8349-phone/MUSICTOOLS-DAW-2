@@ -317,8 +317,7 @@ function renderTimeline() {
     lane.addEventListener('pointerdown', (e) => {
       if (e.target !== lane) return;
       const rect = lane.getBoundingClientRect();
-      const scroll = document.getElementById('timeline-scroll');
-      setPlayheadFromClick(e.clientX - rect.left + scroll.scrollLeft);
+      setPlayheadFromClick(e.clientX - rect.left);
     });
     host.appendChild(lane);
   }
