@@ -56,6 +56,20 @@ function renderSamples() {
     const duration = document.createElement('small');
     duration.textContent = (sample.trimEnd-sample.trimStart).toFixed(2) + ' s seleccionados / ' + sample.buffer.duration.toFixed(2) + ' s';
     info.append(name, duration);
+    const waveform = document.createElement('canvas');
+    waveform.className = 'sample-waveform';
+    waveform.width = 360; waveform.height = 48;
+    waveform.setAttribute('aria-label', 'Forma de onda de ' + sample.name);
+    const waveCtx = waveform.getContext('2d');
+    if (waveCtx) {
+      const data = sample.buffer.getChannelData(0), bins = waveform.width;
+      waveCtx.fillStyle = '#182536'; waveCtx.fillRect(0,0,waveform.width,waveform.height);
+      waveCtx.strokeStyle = '#69c6bb'; waveCtx.lineWidth = 1; waveCtx.beginPath();
+      for (let x=0; x<bins; x++) { const a=Math.floor(x*data.length/bins), b=Math.max(a+1,Math.floor((x+1)*data.length/bins)); let peak=0; for(let j=a;j<b;j++) peak=Math.max(peak,Math.abs(data[j])); const y=peak*21; waveCtx.moveTo(x,24-y); waveCtx.lineTo(x,24+y); }
+      waveCtx.stroke();
+      const left=sample.trimStart/sample.buffer.duration*bins, right=sample.trimEnd/sample.buffer.duration*bins;
+      waveCtx.fillStyle='#f0bd62'; waveCtx.fillRect(left,0,Math.max(1,right-left),3);
+    }
     const preview = document.createElement('button');
     preview.className = 'btn';
     preview.type = 'button';
@@ -70,7 +84,7 @@ function renderSamples() {
     add.type = 'button';
     add.textContent = '+ PISTA';
     add.addEventListener('click', () => placeSample(sample));
-    row.append(info, preview, add, remove);
+    row.append(info, preview, add, remove, waveform);
     // Real waveform preview, with the selected trim range highlighted.
     const wave=document.createElement('div');wave.className='sample-waveform';wave.setAttribute('role','img');wave.setAttribute('aria-label','Forma de onda de '+sample.name);
     const channel=sample.buffer.getChannelData(0),bars=64,step=Math.max(1,Math.floor(channel.length/bars));
