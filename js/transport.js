@@ -86,16 +86,18 @@ export function rewind() {
 // while it plays; microphone capture begins on the next bar.
 export async function startRecord() {
   if (state.isRecording || recordStarting) return;
-  // Destination priority: explicitly armed track, selected audio track, then first audio track.
-  // Lock the destination ID before any async permission/count-in work begins.
-  const armedTrack = state.tracks.find((t) => t.armed && t.kind === 'audio');
+  // The visible selection is authoritative. A stale armed flag from a previous
+  // session must never redirect a take to another lane.
   const selectedTrack = state.tracks.find((t) => t.id === state.selectedTrackId && t.kind === 'audio');
-  const track = armedTrack || selectedTrack || state.tracks.find((t) => t.kind === 'audio');
+  const armedTrack = state.tracks.find((t) => t.armed && t.kind === 'audio');
+  const track = selectedTrack || armedTrack || state.tracks.find((t) => t.kind === 'audio');
   if (!track) {
     toast('Arm an audio track first');
     return;
   }
 
+  // Lock exactly one destination by stable ID before any asynchronous work.
+  for (const t of state.tracks) t.armed = t.id === track.id;
   recordArmedTrack = track;
   state.recordArmedTrackId = track.id;
   recordStarting = true;
@@ -190,6 +192,9 @@ export async function stopRecord() {
   targetTrack.clips.push(clip);
   recordArmedTrack = null;
   state.recordArmedTrackId = null;
+  // Keep the just-recorded lane selected, but clear transient REC arming.
+  for (const t of state.tracks) t.armed = false;
+  state.selectedTrackId = targetTrack.id;
 
   onTransportTick(stopSec);
   const { refreshAll } = await import('./playlist.js');
