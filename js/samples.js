@@ -23,7 +23,7 @@ export async function mountSamples() {
       if (!file.type.startsWith('audio/') && !/\.(wav|mp3|m4a|aac|ogg|flac)$/i.test(file.name)) continue;
       try {
         const buffer = await decodeAudio(await file.arrayBuffer());
-        const sample={ id: 'sample_' + Date.now().toString(36) + '_' + samples.length, name: file.name, blob: file, buffer, trimStart: 0, trimEnd: buffer.duration }; samples.push(sample); try{await saveSampleAsset(sample.id,sample.name,file);}catch(error){console.warn('No se pudo guardar el sample',error);toast('Sample importado, pero no quedó guardado offline');}
+        const sample={ id: 'sample_' + Date.now().toString(36) + '_' + samples.length, name: file.name, blob: file, buffer, trimStart: 0, trimEnd: buffer.duration }; samples.push(sample); try{await saveSampleAsset(sample.id,sample.name,file,0,buffer.duration);}catch(error){console.warn('No se pudo guardar el sample',error);toast('Sample importado, pero no quedó guardado offline');}
       } catch (error) {
         console.error('Sample import failed', error);
         toast('No se pudo abrir: ' + file.name);
@@ -111,9 +111,10 @@ async function playPreview(sample) {
 }
 
 async function placeSample(sample) {
-  let track = state.tracks.find((item) => item.id === state.selectedTrackId);
+  let track = state.tracks.find((item) => item.id === state.selectedTrackId && item.kind === 'audio');
   if (!track) track = state.tracks.find((item) => item.kind === 'audio');
   if (!track) track = createTrack('audio', 'Samples');
+  state.selectedTrackId = track.id;
   addClip(track.id, {
     startSec: Math.max(0, state.playhead),
     lengthSec: Math.max(.02,sample.trimEnd-sample.trimStart),
