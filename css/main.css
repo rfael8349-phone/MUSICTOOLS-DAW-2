@@ -185,7 +185,7 @@
 }
 .track-header:hover .track-actions { opacity: 1; }
 .track-actions button {
-  font-size: 10px; padding: 2px 4px; min-height: 18px; min-width: 18px;
+  font-size: 10px; padding: 2px 4px; min-height: 18px; width: 8px; min-width: 8px;
   background: var(--bg); border: 1px solid var(--border); color: var(--text-dim);
   border-radius: 3px; cursor: pointer;
 }
@@ -439,7 +439,7 @@
 .ruler { pointer-events: auto; overflow: visible; }
 .ruler-tick {
   position: absolute; top: 0; height: 100%; min-width: 18px;
-  padding: 0 3px; border: 0; border-left: 1px solid #454557;
+  padding: 0; border: 0; border-left: 1px solid #454557; white-space: nowrap; overflow: visible;
   border-radius: 0; background: transparent; color: var(--text-faint);
   font: 9px var(--font-mono); text-align: left; cursor: pointer;
   touch-action: manipulation;
