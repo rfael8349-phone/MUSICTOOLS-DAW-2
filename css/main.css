@@ -415,3 +415,10 @@
   font-size: 12px; touch-action: manipulation;
 }
 .clip-menu-actions button:active { border-color: var(--red); background: var(--bg); }
+
+
+/* V5.3.1 channel controls in the mixer */
+.mixer-channel-toggles { display:flex; gap:5px; }
+.mixer-channel-toggles .btn { min-width:34px; min-height:30px; padding:4px 8px; }
+.mixer-channel-toggles .btn.active { background:var(--red); color:#fff; border-color:var(--red-dark); }
+.mixer-strip output { min-height:14px; }
