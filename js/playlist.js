@@ -2,7 +2,7 @@
 // Handles track creation/deletion/rename/arm, clip placement, playhead.
 
 import { state, createTrack, findTrack, removeTrack, addClip, songDuration } from './state.js';
-import { renderPlayheadLine, fmtTime } from './transport.js';
+import { fmtTime } from './transport.js';
 import { updateChannel, ensureChannel, computePeaks } from './audio-engine.js';
 import { saveProject } from './storage.js';
 import { toast } from './transport.js';
