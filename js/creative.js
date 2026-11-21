@@ -7,12 +7,12 @@ import { toast } from './transport.js';
 
 const $ = id => document.getElementById(id);
 const held = new Map();
-let octave = 4, tone = 'synth', qwerty = false, theme = 'xp';
+let octave = 4, tone = 'piano', qwerty = false, theme = 'modern';
 let pattern = Array.from({length:10},()=>Array(16).fill(false));
 let patternTimer = null, patternStep = 0, patternBpm = 100, drumStyle = 'CUMBIA', drumPatternInitialized = false;
 let midiCapture = null;
 const activeCaptureNotes = new Map();
-const tones = [['synth','SYNTH'],['guitar','GUITAR'],['bass','BASS']];
+const tones = [['piano','PIANO'],['guitar','GUITARRA'],['bass','BAJO'],['synth','SYNTH PAD']];
 const drumRows = [['KICK',36],['SNARE',38],['CLOSED HAT',42],['OPEN HAT',46],['CLAP',39],['LOW TOM',45],['MID TOM',47],['HIGH TOM',48],['CRASH',49],['RIDE',51]];
 const keyMap = {a:0,w:1,s:2,e:3,d:4,f:5,t:6,g:7,y:8,h:9,u:10,j:11,k:12,o:13,l:14,p:15};
 
@@ -94,17 +94,21 @@ function renderDrums(host){
  const importLabel=node('label','btn','IMPORTAR SAMPLES WAV / MP3');importLabel.htmlFor='sample-file';host.append(importLabel);
 }
 function renderThemes(){
- const themes=[['xp','Windows XP'],['classic','Classic Studio'],['dark','Studio Dark'],['winamp','Winamp Retro'],['analog','Analog 80s'],['modern','Modern Studio'],['fl','Color Beat'],['minimal','Media Minimal'],['cyber','Cyber Neon'],['metal','Industrial Metal']];
- const box=node('div','theme-picker');const label=node('strong','','APARIENCIA');const select=node('select','studio-select');
+ const themes=[['modern','Windows 11 · Fluent'],['xp','Windows XP · Suave'],['classic','Classic Studio'],['dark','Studio Dark'],['winamp','Winamp Retro'],['analog','Analog 80s'],['fl','Color Beat'],['minimal','Media Minimal'],['cyber','Cyber Neon'],['metal','Industrial Metal']];
+ const box=node('div','theme-picker');const label=node('strong','','TEMA');const select=node('select','studio-select');
  themes.forEach(([v,l])=>{const o=node('option','',l);o.value=v;select.append(o);});select.value=theme;
- select.onchange=()=>{theme=select.value;document.documentElement.dataset.theme=theme;localStorage.setItem('musictool-theme',theme);};
- box.append(label,select);return box;
+ const colors={modern:'#6aa9f4',xp:'#9abfe4',classic:'#aeb7c3',dark:'#7c8de8',winamp:'#a4d65e',analog:'#bd8b62',fl:'#dc77ad',minimal:'#e36b4c',cyber:'#df55e8',metal:'#9aa9b5'};
+ const chips=node('div','theme-swatches');
+ const apply=v=>{theme=v;document.documentElement.dataset.theme=v;localStorage.setItem('musictool-theme',v);select.value=v;chips.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.theme===v)));};
+ themes.forEach(([v,l])=>{const b=node('button','theme-swatch');b.type='button';b.dataset.theme=v;b.title=l;b.setAttribute('aria-label',l);b.setAttribute('aria-pressed',String(v===theme));b.style.background=colors[v];b.onclick=()=>apply(v);chips.append(b);});
+ select.onchange=()=>apply(select.value);
+ box.append(label,select,chips);return box;
 }
 export function mountCreative(){
  const piano=$('view-pianoroll');if(piano){piano.replaceChildren();const wrap=node('section','creative-view piano-view');wrap.append(node('h2','creative-heading','PIANO / VIRTUAL INSTRUMENT'));const host=node('div','creative-instrument');wrap.append(host);const editor=node('div','midi-editor-panel');editor.id='midi-note-editor';wrap.append(editor);piano.append(wrap);renderPiano(host);renderMidiEditor();}
  const drums=$('view-drummachine');if(drums){drums.replaceChildren();const wrap=node('section','creative-view');wrap.append(node('h2','creative-heading','DRUM STUDIO / STEP SEQUENCER'));const host=node('div','creative-instrument');wrap.append(host);drums.append(wrap);renderDrums(host);}
  const menu=$('btn-menu');if(menu&&!$('theme-picker')){const picker=renderThemes();picker.id='theme-picker';document.getElementById('topbar').append(picker);}
- theme=localStorage.getItem('musictool-theme')||'xp';document.documentElement.dataset.theme=theme;const sel=$('theme-picker')?.querySelector('select');if(sel)sel.value=theme;
+ theme=localStorage.getItem('musictool-theme')||'modern';document.documentElement.dataset.theme=theme;const sel=$('theme-picker')?.querySelector('select');if(sel)sel.value=theme;document.documentElement.dataset.theme=theme;document.querySelectorAll('.theme-swatch').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.theme===theme)));
  window.addEventListener('keydown',e=>{if(!qwerty||!$('view-pianoroll')?.classList.contains('active')||e.repeat||/INPUT|SELECT|TEXTAREA/.test(e.target?.tagName||''))return;const k=e.key.toLowerCase();if(keyMap[k]!==undefined){e.preventDefault();press(octave*12+keyMap[k],'qwerty:'+k);}});
  window.addEventListener('keyup',e=>release('qwerty:'+e.key.toLowerCase()));
  window.addEventListener('blur',()=>{for(const k of held.keys())release(k);});
