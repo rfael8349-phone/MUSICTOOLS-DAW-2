@@ -19,6 +19,8 @@ function wireTransport() {
     else transport.startRecord();
   });
   byId('btn-metro').addEventListener('click', () => transport.toggleMetronome());
+  byId('btn-undo').addEventListener('click', () => playlist.undoEdit());
+  byId('btn-redo').addEventListener('click', () => playlist.redoEdit());
   byId('btn-save').addEventListener('click', async () => {
     try { await saveProject(); transport.toast('Project saved'); }
     catch (err) { showBootError(err); }
@@ -46,6 +48,7 @@ function wireNavigation() {
       document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b === btn));
       document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.dataset.view === target));
       if (target === 'playlist') playlist.refreshAll();
+      if (target === 'mixer') playlist.renderMixer();
     });
   }
 }
@@ -102,6 +105,7 @@ async function boot() {
   try {
     syncUI();
     playlist.mount();
+    playlist.renderMixer();
   } catch (err) {
     showBootError(err);
   }
