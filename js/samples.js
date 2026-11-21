@@ -71,14 +71,23 @@ function renderSamples() {
     add.textContent = '+ PISTA';
     add.addEventListener('click', () => placeSample(sample));
     row.append(info, preview, add, remove);
+    // Real waveform preview, with the selected trim range highlighted.
+    const wave=document.createElement('div');wave.className='sample-waveform';wave.setAttribute('role','img');wave.setAttribute('aria-label','Forma de onda de '+sample.name);
+    const channel=sample.buffer.getChannelData(0),bars=64,step=Math.max(1,Math.floor(channel.length/bars));
+    for(let i=0;i<bars;i++){
+      let peak=0;for(let j=i*step;j<Math.min(channel.length,(i+1)*step);j++)peak=Math.max(peak,Math.abs(channel[j]));
+      const bar=document.createElement('span');bar.className='sample-wave-bar';bar.style.height=Math.max(5,peak*100)+'%';bar.dataset.index=String(i);wave.append(bar);
+    }
+    const syncWave=()=>wave.querySelectorAll('.sample-wave-bar').forEach(bar=>{const i=Number(bar.dataset.index)/bars;bar.classList.toggle('selected',i>=sample.trimStart/sample.buffer.duration&&i<sample.trimEnd/sample.buffer.duration);});
+    syncWave();row.append(wave);
     const trim=document.createElement('div');trim.className='sample-trim';
     const startLabel=document.createElement('label');startLabel.textContent='INICIO '+sample.trimStart.toFixed(2)+' s';
     const start=document.createElement('input');start.type='range';start.min='0';start.max=String(Math.max(.01,sample.buffer.duration-.02));start.step='.01';start.value=String(sample.trimStart);
     const endLabel=document.createElement('label');endLabel.textContent='FINAL '+sample.trimEnd.toFixed(2)+' s';
     const end=document.createElement('input');end.type='range';end.min=String(Math.min(sample.buffer.duration,.02));end.max=String(sample.buffer.duration);end.step='.01';end.value=String(sample.trimEnd);
-    start.addEventListener('input',()=>{sample.trimStart=Math.min(Number(start.value),sample.trimEnd-.02);startLabel.firstChild.textContent='INICIO '+sample.trimStart.toFixed(2)+' s';duration.textContent=(sample.trimEnd-sample.trimStart).toFixed(2)+' s seleccionados / '+sample.buffer.duration.toFixed(2)+' s';});
+    start.addEventListener('input',()=>{sample.trimStart=Math.min(Number(start.value),sample.trimEnd-.02);startLabel.firstChild.textContent='INICIO '+sample.trimStart.toFixed(2)+' s';syncWave();duration.textContent=(sample.trimEnd-sample.trimStart).toFixed(2)+' s seleccionados / '+sample.buffer.duration.toFixed(2)+' s';});
     start.addEventListener('change',()=>saveSampleAsset(sample.id,sample.name,sample.blob,sample.trimStart,sample.trimEnd).catch(()=>toast('No se pudo guardar el recorte')));
-    end.addEventListener('input',()=>{sample.trimEnd=Math.max(Number(end.value),sample.trimStart+.02);endLabel.firstChild.textContent='FINAL '+sample.trimEnd.toFixed(2)+' s';duration.textContent=(sample.trimEnd-sample.trimStart).toFixed(2)+' s seleccionados / '+sample.buffer.duration.toFixed(2)+' s';});
+    end.addEventListener('input',()=>{sample.trimEnd=Math.max(Number(end.value),sample.trimStart+.02);endLabel.firstChild.textContent='FINAL '+sample.trimEnd.toFixed(2)+' s';syncWave();duration.textContent=(sample.trimEnd-sample.trimStart).toFixed(2)+' s seleccionados / '+sample.buffer.duration.toFixed(2)+' s';});
     end.addEventListener('change',()=>saveSampleAsset(sample.id,sample.name,sample.blob,sample.trimStart,sample.trimEnd).catch(()=>toast('No se pudo guardar el recorte')));
     startLabel.append(start);endLabel.append(end);trim.append(startLabel,endLabel);row.append(trim);
     host.appendChild(row);
