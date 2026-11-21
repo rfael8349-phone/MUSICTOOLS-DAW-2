@@ -8,6 +8,8 @@ const $ = (id) => document.getElementById(id);
 let activeEditorTrackId = null;
 let midiAccess = null;
 let keyboardModes = { piano:'piano', drums:'drums' };
+let qwertyEnabled = false;
+let instrumentTone = 'synth';
 let activeInstrumentView = 'piano';
 let octave = 4;
 let rootNote = 0;
@@ -121,7 +123,7 @@ function noteOn(key,index,velocity=0.8) {
   if(held.has(key))return;
   if(keyboardModes[activeInstrumentView]==='drums') { const note=36+index; playInstrumentNote('drum',note,velocity); held.set(key,{note});return; }
   if(keyboardModes[activeInstrumentView]==='launchpad') { const note=48+(index%16); playInstrumentNote('pad',note,velocity); held.set(key,{note});return; }
-  const note=quantizedNote(index);playInstrumentNote('synth',note,velocity);held.set(key,{note});
+  const note=quantizedNote(index);playInstrumentNote(instrumentTone,note,velocity);held.set(key,{note});
 }
 function noteOff(key) { const item=held.get(key);if(!item)return;if(item.note!==undefined)stopInstrumentNote(item.note);held.delete(key); }
 function renderInstrumentPanel(host, mode) {
@@ -130,20 +132,56 @@ function renderInstrumentPanel(host, mode) {
   const bar=el('div','instrument-toolbar');
   const modes=[['piano','PIANO'],['launchpad','LAUNCHPAD'],['drums','DRUMS']];
   for(const [id,label] of modes){const b=el('button','btn'+(selectedMode===id?' accent':''),label);b.onclick=()=>{keyboardModes[mode]=id;renderInstrumentPanel(host,mode);};bar.append(b);}
-  const octaveSel=el('select','studio-select');for(let i=1;i<=7;i++){const o=el('option','',String(i));o.value=i;o.selected=i===octave;octaveSel.append(o);}octaveSel.onchange=()=>octave=Number(octaveSel.value);
-  const rootSel=el('select','studio-select');const roots=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];roots.forEach((n,i)=>{const o=el('option','',n);o.value=i;o.selected=i===rootNote;rootSel.append(o);});rootSel.onchange=()=>rootNote=Number(rootSel.value);
-  const scaleSel=el('select','studio-select');Object.keys(scaleIntervals).forEach(s=>{const o=el('option','',s.toUpperCase());o.value=s;o.selected=s===scaleName;scaleSel.append(o);});scaleSel.onchange=()=>scaleName=scaleSel.value;
+  const rootSel=el('select','studio-select');
+  const roots=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  roots.forEach((n,i)=>{const o=el('option','',n);o.value=i;o.selected=i===rootNote;rootSel.append(o);});
+  rootSel.onchange=()=>rootNote=Number(rootSel.value);
+  const scaleSel=el('select','studio-select');
+  Object.keys(scaleIntervals).forEach(s=>{const o=el('option','',s.toUpperCase());o.value=s;o.selected=s===scaleName;scaleSel.append(o);});
+  scaleSel.onchange=()=>scaleName=scaleSel.value;
+  const toneSel=el('select','studio-select');
+  [['synth','SYNTH'],['guitar','GUITAR TONE'],['bass','BASS TONE']].forEach(([v,l])=>{const o=el('option','',l);o.value=v;o.selected=v===instrumentTone;toneSel.append(o);});
+  toneSel.onchange=()=>instrumentTone=toneSel.value;
+  const qwerty=el('button','btn'+(qwertyEnabled?' accent':''),qwertyEnabled?'QWERTY ON':'QWERTY OFF');
+  qwerty.onclick=()=>{qwertyEnabled=!qwertyEnabled;renderInstrumentPanel(host,mode);};
   const midi=el('button','btn','CONNECT MIDI');midi.onclick=connectMidi;
-  bar.append(el('span','instrument-caption','MODE'),octaveSel,rootSel,scaleSel,midi);
-  const help=el('p','studio-note','Teclado del ordenador: A W S E D F T G Y H U J K O L P. Usa el teclado físico o toca las teclas en pantalla.');
-  const keys=el('div','computer-keys');
-  const labels=Object.keys(keyNotes);
-  labels.forEach((k,i)=>{const b=el('button','computer-key',k.toUpperCase());b.onpointerdown=e=>{e.preventDefault();resume();noteOn('touch'+i,i);};b.onpointerup=()=>noteOff('touch'+i);b.onpointerleave=()=>noteOff('touch'+i);keys.append(b);});
-  host.append(bar,help,keys);
-  if(selectedMode==='launchpad'||selectedMode==='drums'){
+  bar.append(el('span','instrument-caption','INSTRUMENT'),toneSel,rootSel,scaleSel,qwerty,midi);
+  host.append(bar);
+  if(selectedMode==='piano'){
+    const octaveBar=el('div','instrument-toolbar');
+    const label=el('span','instrument-caption','RANGO · 2 OCTAVAS');
+    const lower=el('button','btn','− OCT');lower.onclick=()=>{octave=Math.max(1,octave-1);renderInstrumentPanel(host,mode);};
+    const upper=el('button','btn','+ OCT');upper.onclick=()=>{octave=Math.min(7,octave+1);renderInstrumentPanel(host,mode);};
+    octaveBar.append(label,lower,el('span','instrument-caption','OCT '+octave),upper);host.append(octaveBar);
+    const keys=el('div','touch-piano');
+    for(let i=0;i<24;i++){
+      const note=octave*12+rootNote+i;
+      const pc=(note%12), black=[1,3,6,8,10].includes(pc);
+      const key=el('button','piano-key'+(black?' black-key':''),roots[pc]);
+      key.setAttribute('aria-label','Nota '+roots[pc]+' octava '+Math.floor(note/12));
+      key.onpointerdown=e=>{e.preventDefault();resume();const k='touch-piano-'+i;playInstrumentNote(instrumentTone,note,.8);held.set(k,{note});};
+      const off=()=>noteOff('touch-piano-'+i);
+      key.onpointerup=off;key.onpointercancel=off;key.onpointerleave=off;
+      keys.append(key);
+    }
+    host.append(keys);
+    if(qwertyEnabled){
+      const help=el('p','studio-note','QWERTY está activado: usa A W S E D F T G Y H U J K O L P en un teclado físico.');
+      const computer=el('div','computer-keys');
+      Object.keys(keyNotes).forEach((k,i)=>{const b=el('button','computer-key',k.toUpperCase());b.onpointerdown=e=>{e.preventDefault();resume();noteOn('touch-qwerty-'+i,i);};b.onpointerup=()=>noteOff('touch-qwerty-'+i);b.onpointercancel=b.onpointerup;computer.append(b);});
+      host.append(help,computer);
+    }
+  } else {
     const pads=el('div','launchpad-grid');
-    for(let i=0;i<16;i++){const p=el('button','launch-pad',selectedMode==='drums'?['KICK','SNARE','C.HAT','O.HAT','CLAP','TOM 1','TOM 2','CRASH'][i%8]:String(i+1).padStart(2,'0'));p.onpointerdown=e=>{e.preventDefault();resume();noteOn('pad'+i,i);};p.onpointerup=()=>noteOff('pad'+i);p.onpointerleave=()=>noteOff('pad'+i);pads.append(p);}
+    const drumNames=['KICK','SNARE','CLOSED HAT','OPEN HAT','CLAP','TOM LOW','TOM MID','TOM HIGH','CRASH','RIDE','RIM','PERC 1','PERC 2','FLOOR TOM','CHINA','SPLASH'];
+    for(let i=0;i<16;i++){
+      const name=selectedMode==='drums'?drumNames[i]:String(i+1).padStart(2,'0');
+      const p=el('button','launch-pad',name);
+      p.onpointerdown=e=>{e.preventDefault();resume();noteOn('pad'+i,i);};
+      p.onpointerup=()=>noteOff('pad'+i);p.onpointercancel=p.onpointerup;p.onpointerleave=p.onpointerup;pads.append(p);
+    }
     host.append(pads);
+    if(selectedMode==='drums')host.append(el('p','studio-note','Kit de 16 pads con voces sintetizadas. Para batería acústica realista añadiremos un banco de samples con licencia verificable; no se incluyen MP3 de terceros sin permiso.'));
   }
 }
 export function setInstrumentView(target) { activeInstrumentView = target === 'drummachine' ? 'drums' : 'piano'; }
@@ -151,7 +189,7 @@ export function mountStudio() {
   const piano=$('view-pianoroll');if(piano){piano.replaceChildren(el('h2','','PIANO ROLL / VIRTUAL KEYBOARD'));const p=el('p','muted','Toca notas con el teclado del ordenador, la pantalla o un controlador MIDI. Selecciona tonalidad y escala.');const host=el('div','instrument-panel');piano.append(p,host);renderInstrumentPanel(host,'piano');}
   const drums=$('view-drummachine');if(drums){drums.replaceChildren(el('h2','','DRUM MACHINE / LAUNCHPAD'));const p=el('p','muted','Pads de percusión y disparo de sonidos desde teclado físico o pantalla.');const host=el('div','instrument-panel');drums.append(p,host);renderInstrumentPanel(host,'drums');}
   window.addEventListener('keydown',e=>{
-    if(e.repeat||e.ctrlKey||e.metaKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName||''))return;
+    if(!qwertyEnabled||activeInstrumentView!=='piano'||e.repeat||e.ctrlKey||e.metaKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName||''))return;
     const k=e.key.toLowerCase();if(Object.prototype.hasOwnProperty.call(keyNotes,k)){e.preventDefault();resume();noteOn('kbd:'+k,keyNotes[k]);}
   });
   window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();noteOff('kbd:'+k);});
