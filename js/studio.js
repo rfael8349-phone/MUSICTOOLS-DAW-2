@@ -22,6 +22,7 @@ function ensureChannelSettings(track) {
   track.eq ||= { low:0, lowMid:0, mid:0, highMid:0, high:0 };
   track.effects ||= [];
   track.inputGainDb ??= 0;
+  track.inputDeviceId ??= null;
   track.compressor ||= { enabled:false, threshold:-18, ratio:3 };
   track.volume ??= 1;
   track.pan ??= 0;
@@ -56,6 +57,29 @@ export function openChannelEditor(trackId) {
   const close=el('button','btn','✕'); close.type='button'; close.onclick=()=>modal.classList.remove('open');
   head.append(heading,close); panel.append(head);
   const body=el('div','channel-editor-body');
+  const inputBox=el('section','studio-card');inputBox.append(el('h3','','AUDIO INPUT · '+track.name));
+  const inputLabel=el('label','studio-control');inputLabel.append(el('span','studio-control-label','ENTRADA DE GRABACIÓN'));
+  const inputSelect=el('select','studio-select');inputSelect.setAttribute('aria-label','Entrada de audio para esta pista');
+  const defaultOption=el('option','','Micrófono / entrada predeterminada');defaultOption.value='';inputSelect.append(defaultOption);
+  inputSelect.value=track.inputDeviceId||'';
+  inputSelect.addEventListener('change',()=>{track.inputDeviceId=inputSelect.value||null;persist(track);});
+  inputLabel.append(inputSelect);inputBox.append(inputLabel);
+  const inputHelp=el('p','studio-note','Cada pista conserva su propia entrada seleccionada. Si conectas una interfaz USB, actualiza la lista y elige su entrada antes de grabar.');
+  const refreshInputs=el('button','mini-action','↻ ACTUALIZAR ENTRADAS');refreshInputs.type='button';
+  refreshInputs.onclick=async()=>{
+   if(!navigator.mediaDevices?.enumerateDevices){toast('El navegador no permite enumerar entradas');return;}
+   try{
+    const devices=await navigator.mediaDevices.enumerateDevices(),inputs=devices.filter(d=>d.kind==='audioinput');
+    const selected=track.inputDeviceId||'';
+    inputSelect.replaceChildren(defaultOption);
+    inputs.forEach((device,index)=>{const option=el('option','',device.label||('Entrada de audio '+(index+1)));option.value=device.deviceId;inputSelect.append(option);});
+    inputSelect.value=inputs.some(d=>d.deviceId===selected)?selected:'';
+    if(selected&&!inputSelect.value){track.inputDeviceId=null;persist(track);}
+    toast(inputs.length+' entrada(s) disponibles');
+   }catch(error){toast('No se pudieron consultar las entradas');}
+  };
+  inputBox.append(refreshInputs,inputHelp);
+  refreshInputs.click();
   const gainBox=el('section','studio-card'); gainBox.append(el('h3','','INPUT / OUTPUT'));
   gainBox.append(slider('Input gain',-12,12,.5,track.inputGainDb,v=>{track.inputGainDb=v;persist(track);},' dB'));
   gainBox.append(slider('Channel volume',0,150,1,(track.volume??1)*100,v=>{track.volume=v/100;updateChannel(track);},'%'));
@@ -82,7 +106,7 @@ export function openChannelEditor(trackId) {
     row.append(check,title,mix);fxBox.append(row);
   }
   const format=el('p','studio-note','Procesamiento no destructivo durante la reproducción. La grabación original se conserva; los efectos se aplican en la cadena del canal.');
-  body.append(gainBox,eqBox,compBox,fxBox,format); panel.append(body); modal.append(panel); modal.classList.add('open');
+  body.append(inputBox,gainBox,eqBox,compBox,fxBox,format); panel.append(body); modal.append(panel); modal.classList.add('open');
 }
 
 export function renderMixer() {
