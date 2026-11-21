@@ -12,7 +12,7 @@ let pattern = Array.from({length:10},()=>Array(16).fill(false));
 let patternTimer = null, patternStep = 0, patternBpm = 100, drumStyle = 'CUMBIA', drumPatternInitialized = false;
 let midiCapture = null, midiAccess = null;
 const activeCaptureNotes = new Map();
-const tones = [['piano','PIANO'],['guitar','GUITAR'],['bass','BASS'],['synth','SYNTH']];
+const tones = [['piano','PIANO'],['guitar','GUITARRA ELÉCTRICA'],['acoustic','GUITARRA ACÚSTICA'],['bass','BAJO'],['synth','SYNTH']];
 const drumRows = [['KICK',36],['SNARE',38],['CLOSED HAT',42],['OPEN HAT',46],['CLAP',39],['LOW TOM',45],['MID TOM',47],['HIGH TOM',48],['CRASH',49],['RIDE',51]];
 const keyMap = {a:0,w:1,s:2,e:3,d:4,f:5,t:6,g:7,y:8,h:9,u:10,j:11,k:12,o:13,l:14,p:15};
 
