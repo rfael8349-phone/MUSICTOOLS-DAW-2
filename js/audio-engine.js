@@ -205,8 +205,6 @@ const drumSamples={
  ride:sample(DRUM,'Cymbals/Ride.flac'),
  rideBell:sample(DRUM,'Cymbals/Ride%20Bell.flac'),
  tambourine:sample(DRUM,'Percussion/Tambourine.flac'),
- rideBell:sample(DRUM,'Cymbals/Ride%20Bell.flac'),
- tambourine:sample(DRUM,'Percussion/Tambourine.flac')
 };
 const drumMap={
  35:'kick',36:'kickBig',37:'rim',38:'snare',39:'clap',40:'snareRim',41:'tomFloor',
