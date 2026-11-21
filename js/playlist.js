@@ -141,6 +141,7 @@ export function renderMixer() {
       button.setAttribute('aria-pressed', String(!!active));
       button.addEventListener('click', () => {
         onClick();
+        for (const item of state.tracks) updateChannel(item);
         button.classList.toggle('active', !!(label === 'M' ? track.mute : label === 'S' ? track.solo : track.armed));
         button.setAttribute('aria-pressed', String(!!(label === 'M' ? track.mute : label === 'S' ? track.solo : track.armed)));
         saveProject().catch(console.error);
@@ -240,6 +241,7 @@ function renderTrackHeader(track) {
   muteBtn.onclick = (e) => {
     e.stopPropagation();
     track.mute = !track.mute;
+    for (const item of state.tracks) updateChannel(item);
     muteBtn.classList.toggle('on', track.mute);
     saveProject();
   };
@@ -247,6 +249,7 @@ function renderTrackHeader(track) {
   soloBtn.onclick = (e) => {
     e.stopPropagation();
     track.solo = !track.solo;
+    for (const item of state.tracks) updateChannel(item);
     soloBtn.classList.toggle('on', track.solo);
     saveProject();
   };
