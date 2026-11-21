@@ -10,6 +10,7 @@ let workletNode = null;
 let scriptNode = null;
 let monitorGain = null;
 let captureGain = null;
+let workletSilent = null;
 let chunks = [];
 let recording = false;
 let acceptingChunks = false;
@@ -75,7 +76,11 @@ export async function startRecording({ monitor = true, inputGainDb = 0, inputDev
         await ctx.audioWorklet.addModule(WORKLET_URL);
         workletReady = true;
       }
-      workletNode = new AudioWorkletNode(ctx, 'recorder-processor', { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1 });
+      workletNode = new AudioWorkletNode(ctx, 'recorder-processor', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1], channelCount: 1 });
+      workletSilent = ctx.createGain();
+      workletSilent.gain.value = 0;
+      workletNode.connect(workletSilent);
+      workletSilent.connect(ctx.destination);
       workletNode.port.onmessage = (e) => {
         if (e.data instanceof Float32Array && acceptingChunks) chunks.push(e.data);
         if (e.data && e.data.type === 'stopped' && workletStopResolver) workletStopResolver();
@@ -119,6 +124,7 @@ export async function stopRecording() {
     acceptingChunks = false;
     try { workletNode.disconnect(); } catch {}
     workletNode = null;
+    if (workletSilent) { try { workletSilent.disconnect(); } catch {} workletSilent = null; }
   }
   acceptingChunks = false;
   if (scriptNode) {
