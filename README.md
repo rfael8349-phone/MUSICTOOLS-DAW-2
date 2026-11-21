@@ -31,3 +31,14 @@ Playlist, transport, microphone recording, Mixer controls and sample import/prev
 
 ## Validation status
 Changes are committed to the feature branch. Runtime testing is still required on iOS Safari and Android Chrome, especially microphone permissions, monitoring/latency, multitrack synchronization, and IndexedDB restoration. Do not treat the project as device-tested until those checks have been completed.
+
+
+## V7.4.0 — instrument workflow and responsive performance pads
+
+- Added per-track identity metadata: vocal, electric/acoustic guitar, bass, drums, keys, strings, brass, audio/sample and MIDI.
+- Added per-track genre/style labels: rock, metal, punk, heavy metal, ballad, waltz, ranchera, acoustic, electronic and orchestral.
+- Expanded the 16-pad Launchpad banks with punk, heavy, ballad, waltz and ranchera layouts, using the existing sampled drum/percussion voices.
+- Improved Launchpad sizing for narrow phones and landscape orientation, including safe-area handling for notches and home indicators.
+- Bumped the app shell and service-worker cache version to avoid keeping the previous shell after deployment.
+
+**Audio note:** the existing instrument engine uses recorded sample libraries for piano, guitars, bass and drums. The new genre choices organize track identity and pad layouts; they do not yet provide a dedicated multi-velocity instrument library or automatic genre-specific drum-pattern sequencer. Those require a further audio-content and sequencing pass, and should be tested on the target iPhone/Android devices before being described as production-ready.
