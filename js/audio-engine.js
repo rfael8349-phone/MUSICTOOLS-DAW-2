@@ -130,15 +130,37 @@ function getVoiceBuffer(type,note){
    data[i]=v*.72;
   }
  }else if(type==='piano'){
-  const length=Math.floor(sr*2.4);buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
-  const partials=[1,.48,.24,.13,.075,.045,.026],decays=[2.2,3.1,4.1,5.2,6.2,7.4,8.5];
-  for(let i=0;i<length;i++){const t=i/sr;let v=0;for(let h=0;h<partials.length;h++){const f=frequency*(h+1)*Math.sqrt(1+.00018*(h+1)*(h+1));v+=partials[h]*Math.sin(2*Math.PI*f*t)*Math.exp(-decays[h]*t);}data[i]=v*.48;}
+  // Deterministic multi-partial piano model: hammer transient, inharmonic
+  // upper partials and independent decay rates (no white-noise oscillator).
+  const length=Math.floor(sr*3.0);buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
+  const partials=[1,.52,.27,.15,.09,.055,.033,.02],decays=[1.65,2.25,3.1,4.0,4.9,5.8,6.8,7.8];
+  const detune=frequency<180?.0018:.0008;
+  for(let i=0;i<length;i++){
+   const t=i/sr;let v=0;
+   for(let h=0;h<partials.length;h++){
+    const order=h+1,inharmonic=Math.sqrt(1+.00016*order*order);
+    const f=frequency*order*inharmonic;
+    const stringA=Math.sin(2*Math.PI*f*t),stringB=Math.sin(2*Math.PI*f*(1+detune)*t);
+    v+=partials[h]*((stringA+stringB)*.5)*Math.exp(-decays[h]*t);
+   }
+   const hammer=(Math.sin(2*Math.PI*frequency*8.4*t)*Math.exp(-t*105)*.035);
+   const attack=Math.min(1,t*sr/18);
+   data[i]=(v*attack+hammer)*.43;
+  }
  }else if(type==='guitar'||type==='bass'){
-  const length=Math.floor(sr*(type==='bass'?2.0:2.3));buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
-  const period=Math.max(2,Math.round(sr/Math.max(35,frequency))),ring=new Float32Array(period);
-  for(let i=0;i<period;i++)ring[i]=(Math.random()*2-1)*(type==='bass'?.34:.58);
-  let index=0,low=0;const damping=type==='bass'?.9987:.9962;
-  for(let i=0;i<length;i++){const current=ring[index],next=ring[(index+1)%period];const averaged=(current+next)*.5*damping;ring[index]=averaged;index=(index+1)%period;low=low*.18+current*.82;data[i]=(type==='bass'?low:current)*Math.exp(-i/sr*(type==='bass'?.35:.72));}
+  // Plucked-string tone with harmonic decay and a short pick transient.
+  const length=Math.floor(sr*(type==='bass'?2.6:2.8));buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
+  const partials=type==='bass'?[1,.42,.2,.09,.035]:[1,.62,.36,.2,.11,.055,.025];
+  const decay=type==='bass'?.78:1.25;
+  for(let i=0;i<length;i++){
+   const t=i/sr;let v=0;
+   for(let h=0;h<partials.length;h++){
+    const n=h+1;const f=frequency*n;
+    v+=partials[h]*Math.sin(2*Math.PI*f*t)*Math.exp(-decay*t*(1+.24*h));
+   }
+   const pick=Math.sin(2*Math.PI*frequency*5.8*t)*Math.exp(-t*85)*.055;
+   data[i]=(v+pick)*Math.min(1,t*sr/12)*(type==='bass'?.32:.24);
+  }
  }else if(type==='pad'){
   const length=Math.floor(sr*2.1);buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
   for(let i=0;i<length;i++){const t=i/sr;const env=Math.min(1,t*5)*Math.exp(-t*.9);data[i]=(Math.sin(2*Math.PI*frequency*t)+.28*Math.sin(4*Math.PI*frequency*t)+.12*Math.sin(6*Math.PI*frequency*t))*env*.22;}
