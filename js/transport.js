@@ -48,8 +48,8 @@ export async function play() {
   playBtn().classList.add('active');
 
   const startFrom = state.playhead;
-  await schedulePlayback(startFrom, 300);
-  if (token !== playToken || !state.isPlaying) { stopAll(); return; }
+  await schedulePlayback(startFrom, 300, () => token === playToken && state.isPlaying);
+  if (token !== playToken || !state.isPlaying) return;
   if (state.metronome && !recordStarting) scheduleMetronome(startFrom);
 
   const audioStart = nowSec();
@@ -126,6 +126,7 @@ export async function startRecord() {
       await play();
       startedTransportHere = true;
     }
+    if (startToken !== recordStartToken || !state.isPlaying) { clearRecordArm(); return; }
 
     const ctx = getContext();
     const beats = 4;
