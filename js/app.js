@@ -3,7 +3,7 @@ import { state, createTrack } from './state.js';
 import * as transport from './transport.js';
 import * as playlist from './playlist.js';
 import { saveProject, loadProject } from './storage.js';
-import { resume } from './audio-engine.js';
+import { resume, preloadInstrumentSamples } from './audio-engine.js';
 import { mountSamples } from './samples.js';
 import { mountStudio, setInstrumentView } from './studio.js';
 import { mountCreative } from './creative.js';
