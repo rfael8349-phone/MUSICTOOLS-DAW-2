@@ -5,14 +5,16 @@ import { decodeAudio } from './audio-engine.js';
 const META_KEY = 'musicttool-daw-project-v61-root';
 const DB_NAME = 'musicttool-daw-audio-v61-root';
 const STORE = 'clips';
+const SAMPLE_STORE = 'samples';
 
 function openDB() {
   return new Promise((resolve, reject) => {
     if (!('indexedDB' in window)) return reject(new Error('IndexedDB unavailable'));
-    const req = indexedDB.open(DB_NAME, 1);
+    const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: 'id' });
+      if (!db.objectStoreNames.contains(SAMPLE_STORE)) db.createObjectStore(SAMPLE_STORE, { keyPath: 'id' });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -83,4 +85,14 @@ export async function loadProject() {
     }
   }
   return true;
+}
+
+export async function saveSampleAsset(id,name,blob){
+ const db=await openDB();try{const tx=db.transaction(SAMPLE_STORE,'readwrite');tx.objectStore(SAMPLE_STORE).put({id,name,blob,updatedAt:Date.now()});await new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}finally{db.close();}
+}
+export async function listSampleAssets(){
+ const db=await openDB();try{const tx=db.transaction(SAMPLE_STORE,'readonly');return await requestDone(tx.objectStore(SAMPLE_STORE).getAll());}finally{db.close();}
+}
+export async function deleteSampleAsset(id){
+ const db=await openDB();try{const tx=db.transaction(SAMPLE_STORE,'readwrite');tx.objectStore(SAMPLE_STORE).delete(id);await new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}finally{db.close();}
 }
