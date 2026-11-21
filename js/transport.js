@@ -101,8 +101,8 @@ export async function startRecord() {
   try {
     // Request permission immediately from the Record tap, before other awaits.
     const micPermission = requestMic();
-    await resume();
-    await micPermission;
+    const audioReady = resume();
+    await Promise.all([micPermission, audioReady]);
 
     if (!state.isPlaying) {
       await play();
