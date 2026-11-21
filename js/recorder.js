@@ -15,12 +15,17 @@ let recording = false;
 let acceptingChunks = false;
 let workletStopResolver = null;
 let sampleRate = 48000;
+let activeDeviceId = null;
 
 const WORKLET_URL = new URL('./worklets/recorder-processor.js', import.meta.url);
 let workletReady = false;
 
-export async function requestMic() {
-  if (stream) return stream;
+export async function requestMic(deviceId = null) {
+  if (stream && (deviceId || null) === activeDeviceId) return stream;
+  if (stream && (deviceId || null) !== activeDeviceId) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     throw new Error('getUserMedia not supported on this browser');
   }
@@ -30,19 +35,21 @@ export async function requestMic() {
       noiseSuppression: false,
       autoGainControl: false,
       channelCount: 1,
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
     },
     video: false,
   });
+  activeDeviceId = deviceId || null;
   return stream;
 }
 
 export function hasMic() { return !!stream; }
 export function getStream() { return stream; }
 
-export async function startRecording({ monitor = true, inputGainDb = 0 } = {}) {
+export async function startRecording({ monitor = true, inputGainDb = 0, inputDeviceId = null } = {}) {
   const ctx = getContext();
   await ctx.resume();
-  await requestMic();
+  await requestMic(inputDeviceId);
   sampleRate = ctx.sampleRate;
   chunks = [];
   recording = true;
