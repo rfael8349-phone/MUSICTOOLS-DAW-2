@@ -1,7 +1,7 @@
 // Playlist view: renders track headers and clip lanes.
 // Handles track creation/deletion/rename/arm, clip placement, playhead.
 
-import { state, createTrack, findTrack, removeTrack, addClip, songDuration } from './state.js';
+import { state, createTrack, newId, findTrack, removeTrack, removeClip, addClip, songDuration } from './state.js';
 import { fmtTime } from './transport.js';
 import { updateChannel, ensureChannel, computePeaks } from './audio-engine.js';
 import { saveProject } from './storage.js';
@@ -10,6 +10,44 @@ import { toast } from './transport.js';
 const PX_PER_SEC = () => state.zoom; // 40..200
 
 let zoomInput, snapBtn;
+let clipClipboard = null;
+const undoStack = [];
+const redoStack = [];
+const HISTORY_LIMIT = 40;
+
+function takeSnapshot() {
+  return {
+    tracks: state.tracks.map(t => ({ ...t, clips: (t.clips || []).map(c => ({ ...c })) })),
+    selectedTrackId: state.selectedTrackId,
+    selectedClipId: state.selectedClipId,
+    playhead: state.playhead,
+  };
+}
+function pushHistory() {
+  undoStack.push(takeSnapshot());
+  if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+  redoStack.length = 0;
+}
+function restoreSnapshot(snapshot) {
+  state.tracks = snapshot.tracks;
+  state.selectedTrackId = snapshot.selectedTrackId;
+  state.selectedClipId = snapshot.selectedClipId;
+  state.playhead = snapshot.playhead;
+  refreshAll();
+  saveProject().catch(console.error);
+}
+export function undoEdit() {
+  if (!undoStack.length) return toast('Nothing to undo');
+  redoStack.push(takeSnapshot());
+  restoreSnapshot(undoStack.pop());
+  toast('Undo');
+}
+export function redoEdit() {
+  if (!redoStack.length) return toast('Nothing to redo');
+  undoStack.push(takeSnapshot());
+  restoreSnapshot(redoStack.pop());
+  toast('Redo');
+}
 
 export function mount() {
   zoomInput = document.getElementById('playlist-zoom');
@@ -38,6 +76,48 @@ export function mount() {
   });
 
   refreshAll();
+}
+
+export function renderMixer() {
+  const host = document.getElementById('mixer-strips');
+  if (!host) return;
+  host.innerHTML = '';
+  const input = document.createElement('section');
+  input.className = 'mixer-input';
+  const title = document.createElement('strong');
+  title.textContent = 'INPUT GAIN';
+  const value = document.createElement('output');
+  value.textContent = `${Number(state.inputGainDb || 0).toFixed(1)} dB`;
+  const slider = document.createElement('input');
+  slider.type = 'range'; slider.min = '-12'; slider.max = '18'; slider.step = '0.5';
+  slider.value = String(state.inputGainDb || 0);
+  slider.addEventListener('input', () => {
+    state.inputGainDb = Number(slider.value);
+    value.textContent = `${state.inputGainDb.toFixed(1)} dB`;
+    saveProject().catch(console.error);
+  });
+  const hint = document.createElement('small');
+  hint.textContent = 'Ajusta la señal que entra al grabar. Vigila que no distorsione.';
+  input.append(title, value, slider, hint);
+  host.appendChild(input);
+
+  for (const track of state.tracks) {
+    updateChannel(track);
+    const strip = document.createElement('section');
+    strip.className = 'mixer-strip';
+    const name = document.createElement('strong'); name.textContent = track.name;
+    const volLabel = document.createElement('label'); volLabel.textContent = 'Volume';
+    const vol = document.createElement('input'); vol.type = 'range'; vol.min = '0'; vol.max = '1.5'; vol.step = '0.01'; vol.value = String(track.volume ?? 1);
+    const volOut = document.createElement('output'); volOut.textContent = `${Math.round((track.volume ?? 1) * 100)}%`;
+    vol.addEventListener('input', () => { track.volume = Number(vol.value); volOut.textContent = `${Math.round(track.volume * 100)}%`; updateChannel(track); });
+    vol.addEventListener('change', () => saveProject().catch(console.error));
+    const panLabel = document.createElement('label'); panLabel.textContent = 'Pan';
+    const pan = document.createElement('input'); pan.type = 'range'; pan.min = '-1'; pan.max = '1'; pan.step = '0.01'; pan.value = String(track.pan ?? 0);
+    pan.addEventListener('input', () => { track.pan = Number(pan.value); updateChannel(track); });
+    pan.addEventListener('change', () => saveProject().catch(console.error));
+    strip.append(name, volLabel, vol, volOut, panLabel, pan);
+    host.appendChild(strip);
+  }
 }
 
 export function refreshAll() {
@@ -285,30 +365,106 @@ function renderClip(track, clip) {
     el.appendChild(canvas);
   }
 
-  // Drag to move
+  // Tap selects and opens editing actions; drag moves the clip.
   let drag = null;
   el.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     state.selectedClipId = clip.id;
-    refreshAll();
-    drag = { startX: e.clientX, startClipStart: clip.startSec, moved: false };
-    el.setPointerCapture(e.pointerId);
+    state.selectedTrackId = track.id;
+    el.classList.add('selected');
+    drag = { startX: e.clientX, startClipStart: clip.startSec, moved: false, pointerId: e.pointerId };
+    try { el.setPointerCapture(e.pointerId); } catch {}
   });
   el.addEventListener('pointermove', (e) => {
-    if (!drag) return;
+    if (!drag || drag.pointerId !== e.pointerId) return;
     const dx = e.clientX - drag.startX;
-    if (Math.abs(dx) > 3) drag.moved = true;
+    if (Math.abs(dx) > 5 && !drag.moved) { drag.moved = true; pushHistory(); }
+    if (!drag.moved) return;
     let newStart = drag.startClipStart + dx / PX_PER_SEC();
     if (state.snap) newStart = Math.round(newStart * 4) / 4;
     clip.startSec = Math.max(0, newStart);
     el.style.left = (clip.startSec * PX_PER_SEC()) + 'px';
   });
-  el.addEventListener('pointerup', (e) => {
-    if (drag && drag.moved) saveProject();
+  const finishDrag = (e) => {
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const moved = drag.moved;
     drag = null;
-  });
+    if (moved) {
+      saveProject().catch(console.error);
+      refreshAll();
+    } else {
+      showClipMenu(track, clip);
+    }
+  };
+  el.addEventListener('pointerup', finishDrag);
+  el.addEventListener('pointercancel', () => { drag = null; });
 
   return el;
+}
+
+function showClipMenu(track, clip) {
+  document.querySelector('.clip-menu-backdrop')?.remove();
+  const backdrop = document.createElement('div');
+  backdrop.className = 'clip-menu-backdrop';
+  const panel = document.createElement('div');
+  panel.className = 'clip-menu';
+  const heading = document.createElement('strong');
+  heading.textContent = clip.name || 'Audio clip';
+  const actions = [
+    ['Copy', () => { clipClipboard = { ...clip }; toast('Clip copied'); }],
+    ['Cut', () => { pushHistory(); clipClipboard = { ...clip }; removeClip(track.id, clip.id); state.selectedClipId = null; refreshAll(); saveProject(); toast('Clip cut'); }],
+    ['Paste at playhead', () => pasteClip(track)],
+    ['Duplicate', () => { pushHistory(); const copy = { ...clip, id: newId('clip'), startSec: clip.startSec + clip.lengthSec, name: (clip.name || 'Audio') + ' copy' }; track.clips.push(copy); state.selectedClipId = copy.id; refreshAll(); saveProject(); }],
+    ['Split at playhead', () => splitClip(track, clip)],
+    ['Delete', () => { pushHistory(); removeClip(track.id, clip.id); state.selectedClipId = null; refreshAll(); saveProject(); toast('Clip deleted'); }],
+    ['Cancel', () => {}],
+  ];
+  panel.appendChild(heading);
+  const grid = document.createElement('div'); grid.className = 'clip-menu-actions';
+  for (const [label, action] of actions) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.textContent = label;
+    button.addEventListener('click', () => { backdrop.remove(); action(); });
+    grid.appendChild(button);
+  }
+  panel.appendChild(grid);
+  backdrop.appendChild(panel);
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) backdrop.remove(); });
+  document.body.appendChild(backdrop);
+}
+
+function pasteClip(targetTrack) {
+  if (!clipClipboard) return toast('Clipboard is empty');
+  const destination = findTrack(state.selectedTrackId) || targetTrack || state.tracks[0];
+  if (!destination) return toast('Create a track first');
+  pushHistory();
+  const copy = { ...clipClipboard, id: newId('clip'), startSec: state.playhead, name: (clipClipboard.name || 'Audio') + ' pasted' };
+  destination.clips.push(copy);
+  state.selectedTrackId = destination.id;
+  state.selectedClipId = copy.id;
+  refreshAll(); saveProject(); toast('Clip pasted');
+}
+
+function splitClip(track, clip) {
+  const splitAt = state.playhead;
+  const relative = splitAt - clip.startSec;
+  if (relative <= 0.03 || relative >= clip.lengthSec - 0.03) return toast('Move playhead inside the clip');
+  pushHistory();
+  const originalLength = clip.lengthSec;
+  const originalOffset = clip.sourceOffsetSec || 0;
+  const right = {
+    ...clip,
+    id: newId('clip'),
+    startSec: splitAt,
+    lengthSec: originalLength - relative,
+    sourceOffsetSec: originalOffset + relative,
+    name: (clip.name || 'Audio') + ' (B)',
+  };
+  clip.lengthSec = relative;
+  clip.name = (clip.name || 'Audio') + ' (A)';
+  track.clips.push(right);
+  state.selectedClipId = right.id;
+  refreshAll(); saveProject(); toast('Clip split');
 }
 
 function drawWaveform(canvas, peaks, color) {
