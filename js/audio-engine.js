@@ -171,8 +171,8 @@ const electricZones=[
  {low:66,high:69,root:67,file:'G4_s6_01.flac'},
  {low:70,high:72,root:71,file:'B4_s6_01.flac'},
  {low:73,high:76,root:74,file:'D5_s6_01.flac'},
- {low:77,high:82,root:80,file:'G#5_s6_03.flac'},
- {low:83,high:86,root:85,file:'C#6_s6_01.flac'}
+ {low:77,high:82,root:80,file:'G%235_s6_03.flac'},
+ {low:83,high:86,root:85,file:'C%236_s6_01.flac'}
 ];
 const ELECTRIC='https://raw.githubusercontent.com/freepats/electric-guitar-FSBS-clean/main/samples/bridge/small/';
 function electricUrl(note){
