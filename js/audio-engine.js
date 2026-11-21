@@ -247,11 +247,15 @@ export async function preloadInstrumentSamples(){
  const urls=[...pianoMap,...guitarMap,...bassMap].map(x=>x[1]).concat(Object.values(drumSamples));
  const unique=[...new Set(urls)];
  let cache=null;try{if('caches'in window)cache=await caches.open(SAMPLE_CACHE);}catch{}
- const results=await Promise.allSettled(unique.map(async url=>{
-  if(cache&&await cache.match(url))return true;
-  const response=await fetch(url,{mode:'cors'});if(!response.ok)throw new Error('HTTP '+response.status);
-  if(cache)await cache.put(url,response.clone());return true;
- }));
+ const results=[];
+ for(let i=0;i<unique.length;i+=4){
+  const batch=await Promise.allSettled(unique.slice(i,i+4).map(async url=>{
+   if(cache&&await cache.match(url))return true;
+   const response=await fetch(url,{mode:'cors'});if(!response.ok)throw new Error('HTTP '+response.status);
+   if(cache)await cache.put(url,response.clone());return true;
+  }));
+  results.push(...batch);
+ }
  const ready=results.filter(x=>x.status==='fulfilled').length;
  console.info('MUSICTOOL sample bank:',ready+'/'+unique.length,'files cached');
  return {ready,total:unique.length};
