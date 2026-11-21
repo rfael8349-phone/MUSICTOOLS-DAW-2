@@ -9,6 +9,7 @@ let sourceNode = null;
 let workletNode = null;
 let scriptNode = null;
 let monitorGain = null;
+let captureGain = null;
 let chunks = [];
 let recording = false;
 let sampleRate = 48000;
@@ -36,7 +37,7 @@ export async function requestMic() {
 export function hasMic() { return !!stream; }
 export function getStream() { return stream; }
 
-export async function startRecording({ monitor = true } = {}) {
+export async function startRecording({ monitor = true, inputGainDb = 0 } = {}) {
   const ctx = getContext();
   await ctx.resume();
   await requestMic();
@@ -52,6 +53,11 @@ export async function startRecording({ monitor = true } = {}) {
   sourceNode.connect(monitorGain);
   monitorGain.connect(ctx.destination);
 
+  // Dedicated input gain affects the recorded signal, not the monitor volume.
+  captureGain = ctx.createGain();
+  captureGain.gain.value = Math.pow(10, Math.max(-24, Math.min(24, Number(inputGainDb) || 0)) / 20);
+  sourceNode.connect(captureGain);
+
   // capture path
   if (ctx.audioWorklet) {
     try {
@@ -63,7 +69,7 @@ export async function startRecording({ monitor = true } = {}) {
       workletNode.port.onmessage = (e) => {
         if (recording && e.data instanceof Float32Array) chunks.push(e.data);
       };
-      sourceNode.connect(workletNode);
+      captureGain.connect(workletNode);
       return { mode: 'worklet' };
     } catch (err) {
       console.warn('AudioWorklet unavailable, falling back', err);
@@ -80,7 +86,7 @@ export async function startRecording({ monitor = true } = {}) {
     copy.set(inp);
     chunks.push(copy);
   };
-  sourceNode.connect(scriptNode);
+  captureGain.connect(scriptNode);
   const silent = ctx.createGain(); silent.gain.value = 0;
   scriptNode.connect(silent); silent.connect(ctx.destination);
   return { mode: 'scriptprocessor' };
@@ -104,6 +110,10 @@ export async function stopRecording() {
   if (sourceNode) {
     try { sourceNode.disconnect(); } catch {}
     sourceNode = null;
+  }
+  if (captureGain) {
+    try { captureGain.disconnect(); } catch {}
+    captureGain = null;
   }
   if (monitorGain) {
     try { monitorGain.disconnect(); } catch {}
