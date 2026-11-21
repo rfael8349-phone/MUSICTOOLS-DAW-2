@@ -11,6 +11,12 @@ All bundled source collections listed below are dedicated to the public domain u
 - License: CC0 1.0 Universal
 - The DAW loads selected OGG preview samples from the collections and caches them locally in Cache Storage after the first successful download.
 
+## Electric guitar
+
+- Source: [FreePats — FSBS Electric Guitar Clean](https://github.com/freepats/electric-guitar-FSBS-clean)
+- License: CC0 1.0 Universal
+- A compact 13-zone sampled Fender electric guitar bank is mapped by key range. The clean samples can be shaped with the channel amp/cab and pedal effects.
+
 ## Electric bass
 
 - Source: [Karoryfer Samples — Big Little Bass](https://github.com/sfzinstruments/karoryfer.big-little-bass)
