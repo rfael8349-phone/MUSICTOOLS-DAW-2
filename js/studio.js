@@ -69,7 +69,7 @@ export function openChannelEditor(trackId) {
   refreshInputs.onclick=async()=>{
    if(!navigator.mediaDevices?.enumerateDevices){toast('El navegador no permite enumerar entradas');return;}
    try{
-    const devices=await navigator.mediaDevices.enumerateDevices(),inputs=devices.filter(d=>d.kind==='audioinput');
+    const devices=await navigator.mediaDevices.enumerateDevices(),inputs=devices.filter(d=>d.kind==='audioinput'&&d.deviceId);
     const selected=track.inputDeviceId||'';
     inputSelect.replaceChildren(defaultOption);
     inputs.forEach((device,index)=>{const option=el('option','',device.label||('Entrada de audio '+(index+1)));option.value=device.deviceId;inputSelect.append(option);});
