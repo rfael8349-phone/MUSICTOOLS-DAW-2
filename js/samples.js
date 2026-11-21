@@ -6,7 +6,7 @@ import { refreshAll } from './playlist.js';
 import { toast } from './transport.js';
 
 let samples = [];
-let previewSource = null;
+let previewSource = null;\nlet mounted = false;
 
 export function mountSamples() {
   const picker = document.getElementById('sample-file');
