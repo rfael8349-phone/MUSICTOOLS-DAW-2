@@ -14,6 +14,7 @@ let recordArmedTrack = null;
 let localRecTimer = null;
 let recordStarting = false;
 let recordStartToken = 0;
+let playToken = 0;
 
 const bpmEl = () => document.getElementById('tempo-val');
 const timeEl = () => document.getElementById('display-time');
@@ -33,7 +34,9 @@ export function setTimeSig(num, den) {
 
 export async function play() {
   if (state.isPlaying) return;
+  const token = ++playToken;
   await resume();
+  if (token !== playToken) return;
   getContext();
   state.isPlaying = true;
   playBtn().textContent = '⏸';
@@ -41,6 +44,7 @@ export async function play() {
 
   const startFrom = state.playhead;
   await schedulePlayback(startFrom, 300);
+  if (token !== playToken || !state.isPlaying) { stopAll(); return; }
   if (state.metronome && !recordStarting) scheduleMetronome(startFrom);
 
   const audioStart = nowSec();
@@ -52,6 +56,7 @@ export async function play() {
 }
 
 export function pause() {
+  playToken++;
   if (recordStarting) recordStartToken++;
   if (!state.isPlaying) return;
   state.isPlaying = false;
