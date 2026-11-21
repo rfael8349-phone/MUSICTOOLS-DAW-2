@@ -125,17 +125,69 @@ export function renderMixer() {
     updateChannel(track);
     const strip = document.createElement('section');
     strip.className = 'mixer-strip';
-    const name = document.createElement('strong'); name.textContent = track.name;
+    strip.dataset.trackId = track.id;
+    const name = document.createElement('strong');
+    name.textContent = track.name;
+
+    const toggles = document.createElement('div');
+    toggles.className = 'mixer-channel-toggles';
+    const makeToggle = (label, active, title, onClick) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn' + (active ? ' active' : '');
+      button.textContent = label;
+      button.title = title;
+      button.setAttribute('aria-pressed', String(!!active));
+      button.addEventListener('click', () => {
+        onClick();
+        for (const item of state.tracks) updateChannel(item);
+        const enabled = label === 'M' ? track.mute : label === 'S' ? track.solo : track.armed;
+        button.classList.toggle('active', !!enabled);
+        button.setAttribute('aria-pressed', String(!!enabled));
+        saveProject().catch(console.error);
+      });
+      return button;
+    };
+    toggles.append(
+      makeToggle('M', track.mute, 'Silenciar canal', () => { track.mute = !track.mute; }),
+      makeToggle('S', track.solo, 'Solo de canal', () => { track.solo = !track.solo; }),
+      makeToggle('●', track.armed, 'Preparar para grabación', () => {
+        const wasArmed = track.armed;
+        for (const item of state.tracks) item.armed = false;
+        track.armed = !wasArmed;
+      })
+    );
+
     const volLabel = document.createElement('label'); volLabel.textContent = 'Volume';
-    const vol = document.createElement('input'); vol.type = 'range'; vol.min = '0'; vol.max = '1.5'; vol.step = '0.01'; vol.value = String(track.volume ?? 1);
-    const volOut = document.createElement('output'); volOut.textContent = `${Math.round((track.volume ?? 1) * 100)}%`;
-    vol.addEventListener('input', () => { track.volume = Number(vol.value); volOut.textContent = `${Math.round(track.volume * 100)}%`; updateChannel(track); });
+    const vol = document.createElement('input');
+    vol.type = 'range'; vol.min = '0'; vol.max = '1.5'; vol.step = '0.01';
+    vol.value = String(track.volume ?? 1);
+    const volOut = document.createElement('output');
+    volOut.textContent = `${Math.round((track.volume ?? 1) * 100)}%`;
+    vol.addEventListener('input', () => {
+      track.volume = Number(vol.value);
+      volOut.textContent = `${Math.round(track.volume * 100)}%`;
+      updateChannel(track);
+    });
     vol.addEventListener('change', () => saveProject().catch(console.error));
+
     const panLabel = document.createElement('label'); panLabel.textContent = 'Pan';
-    const pan = document.createElement('input'); pan.type = 'range'; pan.min = '-1'; pan.max = '1'; pan.step = '0.01'; pan.value = String(track.pan ?? 0);
-    pan.addEventListener('input', () => { track.pan = Number(pan.value); updateChannel(track); });
+    const pan = document.createElement('input');
+    pan.type = 'range'; pan.min = '-1'; pan.max = '1'; pan.step = '0.01';
+    pan.value = String(track.pan ?? 0);
+    const panOut = document.createElement('output');
+    const updatePanLabel = () => {
+      panOut.textContent = Number(track.pan || 0) < -0.01 ? 'L ' + Math.round(Math.abs(track.pan) * 100)
+        : Number(track.pan || 0) > 0.01 ? 'R ' + Math.round(track.pan * 100) : 'C';
+    };
+    updatePanLabel();
+    pan.addEventListener('input', () => {
+      track.pan = Number(pan.value);
+      updatePanLabel();
+      updateChannel(track);
+    });
     pan.addEventListener('change', () => saveProject().catch(console.error));
-    strip.append(name, volLabel, vol, volOut, panLabel, pan);
+    strip.append(name, toggles, volLabel, vol, volOut, panLabel, pan, panOut);
     host.appendChild(strip);
   }
 }
@@ -191,6 +243,7 @@ function renderTrackHeader(track) {
   muteBtn.onclick = (e) => {
     e.stopPropagation();
     track.mute = !track.mute;
+    for (const item of state.tracks) updateChannel(item);
     muteBtn.classList.toggle('on', track.mute);
     saveProject();
   };
@@ -198,6 +251,7 @@ function renderTrackHeader(track) {
   soloBtn.onclick = (e) => {
     e.stopPropagation();
     track.solo = !track.solo;
+    for (const item of state.tracks) updateChannel(item);
     soloBtn.classList.toggle('on', track.solo);
     saveProject();
   };
