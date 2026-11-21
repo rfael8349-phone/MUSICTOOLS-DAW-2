@@ -514,3 +514,177 @@
  .computer-keys { grid-template-columns:repeat(6,minmax(30px,1fr)); }
  .v6-mixer-strip,.master-strip { flex-basis:170px; min-width:170px; }
 }
+
+
+/* =========================================================
+   MUSICTOOL DAW V6.1 — DESKTOP WORKSPACE
+   Classic Windows XP-inspired chrome; existing controls/views
+   remain the same DOM nodes so transport/audio logic is untouched.
+   ========================================================= */
+@media (min-width: 900px) and (min-height: 520px) {
+  :root {
+    --topbar-h: 58px;
+    --nav-h: 0px;
+    --track-row-h: 62px;
+    --ruler-h: 34px;
+  }
+
+  #app {
+    grid-template-columns: 184px minmax(0, 1fr);
+    grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+    grid-template-areas: "top top" "nav work";
+    background: #7b9ac4;
+    padding: 3px;
+    gap: 3px;
+  }
+  #topbar {
+    grid-area: top;
+    min-width: 0;
+    background: linear-gradient(180deg,#3c83df 0%,#1f5fbd 42%,#174a9b 100%);
+    border: 1px solid #0b3678;
+    border-radius: 6px 6px 2px 2px;
+    box-shadow: inset 0 1px rgba(255,255,255,.45), 0 1px 3px rgba(0,0,0,.35);
+    padding: 0 12px;
+  }
+  .brand-title { color:#fff; text-shadow:0 1px 2px #123c7b; }
+  .brand-sub { color:#d9eaff; }
+  .transport {
+    background:linear-gradient(180deg,#e8f1fb,#b9cde5);
+    border:1px solid #174a91;
+    border-radius:4px;
+    padding:4px 7px;
+    box-shadow:inset 0 1px #fff;
+  }
+  .transport .btn {
+    color:#16375e;
+    background:linear-gradient(180deg,#fff,#cbdcf0);
+    border:1px solid #7e9cbd;
+    border-radius:3px;
+    box-shadow:inset 0 1px #fff;
+  }
+  .transport .btn.primary { color:#16743a; }
+  .transport .btn.danger { color:#b51e27; }
+  .display {
+    background:#071629;
+    border:1px inset #91a9c5;
+    border-radius:2px;
+  }
+  .display.small { color:#ffd36c; }
+  .top-actions .btn {
+    color:#16375e;
+    background:linear-gradient(180deg,#fff,#cbdcf0);
+    border:1px solid #7e9cbd;
+    border-radius:3px;
+  }
+
+  #bottomnav {
+    grid-area:nav;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    justify-content:flex-start;
+    gap:3px;
+    min-height:0;
+    padding:8px 6px;
+    overflow-y:auto;
+    background:linear-gradient(180deg,#e5edf7,#b9cde4);
+    border:1px solid #6486ad;
+    border-radius:3px;
+    box-shadow:inset 0 1px #fff;
+  }
+  .nav-btn {
+    min-height:44px;
+    flex-direction:row;
+    justify-content:flex-start;
+    gap:12px;
+    padding:7px 12px;
+    color:#244363;
+    border:1px solid transparent;
+    border-radius:3px;
+    border-top:1px solid transparent;
+    font-size:11px;
+    letter-spacing:.5px;
+    text-align:left;
+  }
+  .nav-btn .nav-icon { width:22px; font-size:18px; }
+  .nav-btn .nav-label { font-size:10px; letter-spacing:.5px; }
+  .nav-btn:hover { background:rgba(255,255,255,.6); border-color:#9bb6d3; }
+  .nav-btn.active {
+    color:#123d70;
+    background:linear-gradient(180deg,#fff,#d8e7f7);
+    border:1px solid #7fa3cb;
+    border-top:1px solid #7fa3cb;
+    box-shadow:inset 0 1px #fff,0 1px 2px rgba(25,55,90,.15);
+  }
+
+  #views {
+    grid-area:work;
+    min-width:0;
+    min-height:0;
+    background:#111a27;
+    border:1px solid #6486ad;
+    border-radius:3px;
+    box-shadow:inset 0 1px rgba(255,255,255,.12);
+  }
+  .view { min-width:0; min-height:0; }
+  #view-playlist { background:#101722; }
+  .playlist-toolbar {
+    min-height:48px;
+    background:linear-gradient(180deg,#e6edf5,#c4d5e8);
+    border-bottom:1px solid #7895b5;
+    padding:6px 10px;
+  }
+  .playlist-toolbar .btn {
+    color:#17385c;
+    background:linear-gradient(180deg,#fff,#d1dfef);
+    border:1px solid #8aa6c5;
+    border-radius:3px;
+    box-shadow:inset 0 1px #fff;
+  }
+  .playlist-toolbar .btn.accent {
+    color:#fff;
+    background:linear-gradient(180deg,#4388cf,#18569b);
+    border-color:#174b87;
+  }
+  .zoom-label { color:#294969; }
+  .playlist-body {
+    top:48px;
+    grid-template-columns:210px minmax(0,1fr);
+  }
+  .track-headers { background:#17263a; }
+  .track-header { height:var(--track-row-h); }
+  .track-lane { height:var(--track-row-h) !important; min-height:var(--track-row-h); }
+  .track-ruler-spacer,.ruler { height:var(--ruler-h); min-height:var(--ruler-h); }
+  .track-header.selected { background:#263d5a; }
+  .track-name { font-size:13px; }
+  .track-controls { gap:4px; }
+  .track-toggle { min-width:23px; min-height:20px; font-size:10px; }
+  .track-actions { opacity:.65; }
+  .track-actions button { width:20px; min-width:20px; min-height:20px; }
+  #view-mixer { background:linear-gradient(180deg,#dce8f5,#aebfd3); }
+  #view-mixer .placeholder-panel { color:#1b3552; }
+  #view-mixer .placeholder-panel h2 {
+    color:#173d6c;
+    border-bottom-color:#397bc2;
+  }
+  #view-mixer .muted { color:#45617f; }
+  #view-samples .placeholder-panel,
+  #view-pianoroll .placeholder-panel,
+  #view-drummachine .placeholder-panel,
+  #view-musictool .placeholder-panel { max-width:none; }
+}
+
+/* Tablet / phone landscape: use the wider arrangement without
+   forcing the desktop sidebar onto narrow portrait screens. */
+@media (min-width: 700px) and (orientation: landscape) and (max-height: 519px) {
+  #app { grid-template-rows:48px minmax(0,1fr) 48px; }
+  #topbar { padding-left:8px; padding-right:8px; }
+  .playlist-body { grid-template-columns:176px minmax(0,1fr); }
+  .track-header,.track-lane { height:50px; min-height:50px; }
+  #bottomnav { grid-template-columns:repeat(6,minmax(0,1fr)); }
+}
+
+/* Keep the phone-first touch layout intact in portrait. */
+@media (max-width: 899px), (max-height: 519px) {
+  #bottomnav { min-width:0; }
+}
