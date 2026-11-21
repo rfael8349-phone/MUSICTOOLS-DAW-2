@@ -4,6 +4,7 @@ import { state, createTrack } from './state.js';
 import * as transport from './transport.js';
 import * as playlist from './playlist.js';
 import { saveProject, loadProject } from './storage.js';
+import { resume } from './audio-engine.js';
 
 async function boot() {
   // Restore previous session, including persisted audio clips
