@@ -41,7 +41,7 @@ function detectPitch(buffer,sampleRate){
  const rms=Math.sqrt(energy/buffer.length);if(rms<.012)return null;
  const minTau=Math.max(2,Math.floor(sampleRate/1100)),maxTau=Math.min(Math.floor(sampleRate/35),Math.floor(buffer.length/2));
  const diff=new Float32Array(maxTau+1),cmnd=new Float32Array(maxTau+1);let running=0;
- for(let tau=minTau;tau<=maxTau;tau++){
+ for(let tau=1;tau<=maxTau;tau++){
   let sum=0;for(let i=0;i<buffer.length-maxTau;i+=3){const d=buffer[i]-buffer[i+tau];sum+=d*d;}
   diff[tau]=sum;running+=sum;cmnd[tau]=running?sum*tau/running:1;
  }
@@ -160,7 +160,7 @@ function renderStudy(host){
   };
   const prog=el('select','tool-select');Object.entries(options).forEach(([v,p])=>{const o=el('option','',p.label);o.value=v;prog.append(o);});prog.value=studyProgression;prog.onchange=()=>{studyProgression=prog.value;renderStudy(host);};card.append(prog);
   const p=options[studyProgression],row=el('div','progression-row');p.degrees.forEach((d,i)=>{const rootNote=(studyRoot+d)%12,typ=chordTypes[p.types[i]],b=el('button','progression-chord',noteNames[rootNote]+' '+(typ.label==='Menor'?'m':typ.label==='Séptima dominante'?'7':typ.label==='Séptima mayor'?'maj7':''));b.onclick=()=>playChord(typ.steps.map(s=>(rootNote+s)%12));row.append(b);});card.append(row);
-  const play=el('button','btn accent tool-action','▶ ESCUCHAR PROGRESIÓN');play.onclick=async()=>{for(const d of p.degrees){const rootNote=(studyRoot+d)%12,typ=chordTypes[p.types[p.degrees.indexOf(d)]];await playChord(typ.steps.map(s=>(rootNote+s)%12));await wait(250);}};card.append(play);
+  const play=el('button','btn accent tool-action','▶ ESCUCHAR PROGRESIÓN');play.onclick=async()=>{for(let i=0;i<p.degrees.length;i++){const rootNote=(studyRoot+p.degrees[i])%12,typ=chordTypes[p.types[i]];await playChord(typ.steps.map(s=>(rootNote+s)%12));await wait(250);}};card.append(play);
  }
  host.append(card);
 }
