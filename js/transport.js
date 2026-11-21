@@ -40,7 +40,7 @@ export async function play() {
   playBtn().classList.add('active');
 
   const startFrom = state.playhead;
-  schedulePlayback(startFrom, 300);
+  await schedulePlayback(startFrom, 300);
   if (state.metronome && !recordStarting) scheduleMetronome(startFrom);
 
   const audioStart = nowSec();
@@ -64,10 +64,10 @@ export function pause() {
   }
 }
 
-export function stop() {
+export async function stop() {
   if (recordStarting) recordStartToken++;
-  pause();
-  if (state.isRecording) stopRecord();
+  if (state.isRecording) await stopRecord();
+  else pause();
   state.playhead = 0;
   onTransportTick(0);
   renderPlayhead(0);
@@ -132,7 +132,7 @@ export async function startRecord() {
 
     // The backing track has continued throughout the four-beat count-in.
     // Recording uses count-in only; the continuous metronome stays off.
-    await startRecording({ monitor: false, inputGainDb: track.inputGainDb ?? state.inputGainDb ?? 0 });
+    await startRecording({ monitor: false, inputGainDb: track.inputGainDb ?? state.inputGainDb ?? 0, inputDeviceId: track.inputDeviceId || null });
     if (startToken !== recordStartToken || !state.isPlaying) {
       await stopRecording();
       return;
@@ -148,6 +148,9 @@ export async function startRecord() {
   } catch (err) {
     console.error('Record start failed:', err);
     if (startedTransportHere) pause();
+    recordArmedTrack = null;
+    state.recordArmedTrackId = null;
+    for (const t of state.tracks) t.armed = false;
     toast(err?.message?.includes('getUserMedia') ? 'Microphone permission required' : 'Could not start recording');
   } finally {
     recordStarting = false;
