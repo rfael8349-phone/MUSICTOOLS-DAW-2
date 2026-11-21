@@ -5,7 +5,7 @@ import * as playlist from './playlist.js';
 import { saveProject, loadProject } from './storage.js';
 import { resume } from './audio-engine.js';
 import { mountSamples } from './samples.js';
-import { mountStudio } from './studio.js';
+import { mountStudio, setInstrumentView } from './studio.js';
 
 const byId = (id) => document.getElementById(id);
 
@@ -47,6 +47,7 @@ function wireNavigation() {
   for (const btn of document.querySelectorAll('.nav-btn')) {
     btn.addEventListener('click', () => {
       const target = btn.dataset.target;
+      setInstrumentView(target);
       document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b === btn));
       document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.dataset.view === target));
       if (target === 'playlist') playlist.refreshAll();
