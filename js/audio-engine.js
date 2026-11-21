@@ -77,7 +77,7 @@ export function getChannelLevel(trackId){const ch=channels.get(trackId);if(!ch)r
 export function removeChannel(trackId){const ch=channels.get(trackId);if(ch){for(const n of [ch.gain,...ch.filters,ch.compressor,ch.panner,ch.analyser,...ch.fxNodes])if(n)try{n.disconnect();}catch{}channels.delete(trackId);}}
 export function playClick(when,accent=false){getContext();const src=ctx.createBufferSource();src.buffer=clickBuffer;const g=ctx.createGain();g.gain.value=accent?1:.6;src.connect(g);g.connect(metronomeGain);src.start(when);}
 function makeClickBuffer(c){const dur=.05,sr=c.sampleRate,b=c.createBuffer(1,Math.floor(sr*dur),sr),d=b.getChannelData(0);for(let i=0;i<d.length;i++){const t=i/sr;d[i]=Math.sin(2*Math.PI*1000*t)*Math.exp(-t*60);}return b;}
-export async function schedulePlayback(fromSec,windowSec=30){
+export async function schedulePlayback(fromSec,windowSec=30,isCurrent=()=>true){
  getContext();stopAll();
  const audible=state.tracks.filter(track=>isAudible(track));
  // Decode all MIDI voices before scheduling so notes stay locked to the transport clock.
@@ -89,6 +89,7 @@ export async function schedulePlayback(fromSec,windowSec=30){
   }
  }
  await Promise.allSettled(loads);
+ if(!isCurrent())return;
  const t0=ctx.currentTime+.06;
  for(const track of audible){
   const ch=ensureChannel(track.id);updateChannel(track);
