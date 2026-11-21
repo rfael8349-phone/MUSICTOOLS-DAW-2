@@ -27,7 +27,7 @@ Serve this folder over HTTPS (required for microphone access) or localhost. Open
 - Samples workspace imports supported audio files, previews them, and places them at the playhead on the selected audio track; sample blobs use the existing IndexedDB clip persistence.
 
 ## Current scope
-Playlist, transport, microphone recording and playback are the current foundation. Mixer UI, MIDI piano roll, drum machine, effects, video capture and export workflows remain subsequent development stages.
+Playlist, transport, microphone recording, Mixer controls and sample import/preview/placement are implemented in this branch. MIDI piano roll, programmable drum machine, effects, video capture and export workflows remain subsequent development stages.
 
 ## Validation status
 Changes are committed to the feature branch. Runtime testing is still required on iOS Safari and Android Chrome, especially microphone permissions, monitoring/latency, multitrack synchronization, and IndexedDB restoration. Do not treat the project as device-tested until those checks have been completed.
