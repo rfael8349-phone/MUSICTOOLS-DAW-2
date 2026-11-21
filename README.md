@@ -33,7 +33,7 @@ Playlist, transport, microphone recording, Mixer controls and sample import/prev
 Changes are committed to the feature branch. Runtime testing is still required on iOS Safari and Android Chrome, especially microphone permissions, monitoring/latency, multitrack synchronization, and IndexedDB restoration. Do not treat the project as device-tested until those checks have been completed.
 
 
-## V7.4.0 — instrument workflow and responsive performance pads
+## V7.4.1 — instrument workflow and responsive performance pads
 
 - Added per-track identity metadata: vocal, electric/acoustic guitar, bass, drums, keys, strings, brass, audio/sample and MIDI.
 - Added per-track genre/style labels: rock, metal, punk, heavy metal, ballad, waltz, ranchera, acoustic, electronic and orchestral.
