@@ -1,14 +1,14 @@
 // MUSICTOOL DAW V6 audio graph: isolated channel strips, EQ, dynamics and FX.
 import { state, isAudible } from './state.js';
-let ctx=null,master=null,metronomeGain=null,clickBuffer=null;
+let ctx=null,master=null,masterLimiter=null,metronomeGain=null,clickBuffer=null;
 let activeSources=[];
 const channels=new Map(),voices=new Map();
 export function getContext(){
- if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;ctx=new AC({latencyHint:'interactive'});master=ctx.createGain();master.gain.value=Number.isFinite(state.masterVolume)?state.masterVolume:.9;master.connect(ctx.destination);metronomeGain=ctx.createGain();metronomeGain.gain.value=.5;metronomeGain.connect(master);clickBuffer=makeClickBuffer(ctx);for(const t of state.tracks)ensureChannel(t.id);}
+ if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;ctx=new AC({latencyHint:'interactive'});master=ctx.createGain();master.gain.value=Number.isFinite(state.masterVolume)?state.masterVolume:.9;masterLimiter=ctx.createDynamicsCompressor();masterLimiter.threshold.value=-1;masterLimiter.knee.value=0;masterLimiter.ratio.value=20;masterLimiter.attack.value=.003;masterLimiter.release.value=.12;master.connect(masterLimiter);masterLimiter.connect(ctx.destination);metronomeGain=ctx.createGain();metronomeGain.gain.value=.5;metronomeGain.connect(master);clickBuffer=makeClickBuffer(ctx);for(const t of state.tracks)ensureChannel(t.id);}
  return ctx;
 }
 export async function resume(){const c=getContext();if(c.state==='suspended')await c.resume();return c.state;}
-export function setMasterVolume(value){state.masterVolume=Math.max(0,Math.min(1.5,Number(value)||0));getContext();master.gain.setTargetAtTime(state.masterVolume,ctx.currentTime,.015);}
+export function setMasterVolume(value){state.masterVolume=Math.max(0,Math.min(2,Number(value)||0));getContext();master.gain.setTargetAtTime(state.masterVolume,ctx.currentTime,.015);}
 export function getMasterGain(){getContext();return master;}
 function makeChannel(trackId){
  const input=ctx.createGain(),filters=[80,250,1000,4000,10000].map((freq)=>{const f=ctx.createBiquadFilter();f.type='peaking';f.frequency.value=freq;f.Q.value=.85;return f;});

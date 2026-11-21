@@ -58,7 +58,7 @@ export function openChannelEditor(trackId) {
   const body=el('div','channel-editor-body');
   const gainBox=el('section','studio-card'); gainBox.append(el('h3','','INPUT / OUTPUT'));
   gainBox.append(slider('Input gain',-12,12,.5,track.inputGainDb,v=>{track.inputGainDb=v;persist(track);},' dB'));
-  gainBox.append(slider('Channel volume',0,150,1,(track.volume??1)*100,v=>{track.volume=v/100;updateChannel(track);},'%'));
+  gainBox.append(slider('Channel volume',0,400,1,(track.volume??1)*100,v=>{track.volume=v/100;updateChannel(track);},'%'));
   gainBox.append(slider('Pan',-1,1,.01,track.pan,v=>{track.pan=v;updateChannel(track);}));
   const eqBox=el('section','studio-card'); eqBox.append(el('h3','','5-BAND PARAMETRIC EQ'));
   const bands=[['low','LOW · 80 Hz'],['lowMid','LOW MID · 250 Hz'],['mid','MID · 1 kHz'],['highMid','HIGH MID · 4 kHz'],['high','AIR · 10 kHz']];
@@ -88,14 +88,14 @@ export function openChannelEditor(trackId) {
 export function renderMixer() {
   const host=$('mixer-strips'); if(!host)return; host.replaceChildren(); if(meterTimer)clearInterval(meterTimer);
   const master=el('section','mixer-strip master-strip'); master.append(el('strong','','MASTER'));
-  master.append(slider('Master',0,150,1,(state.masterVolume??.9)*100,v=>{import('./audio-engine.js').then(m=>m.setMasterVolume(v/100));},'%'));
+  master.append(slider('Master',0,200,1,(state.masterVolume??.9)*100,v=>{import('./audio-engine.js').then(m=>m.setMasterVolume(v/100));},'%'));
   host.append(master);
   for(const track of state.tracks) {
     ensureChannelSettings(track); updateChannel(track);
     const strip=el('section','mixer-strip v6-mixer-strip'); strip.dataset.trackId=track.id;
     const name=el('strong','mixer-track-name',track.name);
     const meter=el('div','mixer-meter'); const fill=el('i','');meter.append(fill);
-    const vol=slider('LEVEL',0,150,1,(track.volume??1)*100,v=>{track.volume=v/100;updateChannel(track);},'%');
+    const vol=slider('PLAYBACK LEVEL',0,400,1,(track.volume??1)*100,v=>{track.volume=v/100;updateChannel(track);},'%');
     const pan=slider('PAN',-1,1,.01,track.pan,v=>{track.pan=v;updateChannel(track);});
     const open=el('button','btn accent','CHANNEL STUDIO');open.type='button';open.onclick=()=>openChannelEditor(track.id);
     strip.append(name,meter,vol,pan,open);host.append(strip);
