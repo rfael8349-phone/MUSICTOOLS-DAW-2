@@ -7,7 +7,8 @@ import { toast } from './transport.js';
 const $ = (id) => document.getElementById(id);
 let activeEditorTrackId = null;
 let midiAccess = null;
-let keyboardMode = 'piano';
+let keyboardModes = { piano:'piano', drums:'drums' };
+let activeInstrumentView = 'piano';
 let octave = 4;
 let rootNote = 0;
 let scaleName = 'chromatic';
@@ -118,16 +119,17 @@ function quantizedNote(index) {
 }
 function noteOn(key,index,velocity=0.8) {
   if(held.has(key))return;
-  if(keyboardMode==='drums') { const note=36+index; playInstrumentNote('drum',note,velocity); held.set(key,{note});return; }
-  if(keyboardMode==='launchpad') { const note=48+(index%16); playInstrumentNote('pad',note,velocity); held.set(key,{note});return; }
+  if(keyboardModes[activeInstrumentView]==='drums') { const note=36+index; playInstrumentNote('drum',note,velocity); held.set(key,{note});return; }
+  if(keyboardModes[activeInstrumentView]==='launchpad') { const note=48+(index%16); playInstrumentNote('pad',note,velocity); held.set(key,{note});return; }
   const note=quantizedNote(index);playInstrumentNote('synth',note,velocity);held.set(key,{note});
 }
 function noteOff(key) { const item=held.get(key);if(!item)return;if(item.note!==undefined)stopInstrumentNote(item.note);held.delete(key); }
 function renderInstrumentPanel(host, mode) {
   host.replaceChildren();
+  const selectedMode=keyboardModes[mode]||'piano';
   const bar=el('div','instrument-toolbar');
   const modes=[['piano','PIANO'],['launchpad','LAUNCHPAD'],['drums','DRUMS']];
-  for(const [id,label] of modes){const b=el('button','btn'+(keyboardMode===id?' accent':''),label);b.onclick=()=>{keyboardMode=id;renderInstrumentPanel(host,mode);};bar.append(b);}
+  for(const [id,label] of modes){const b=el('button','btn'+(selectedMode===id?' accent':''),label);b.onclick=()=>{keyboardModes[mode]=id;renderInstrumentPanel(host,mode);};bar.append(b);}
   const octaveSel=el('select','studio-select');for(let i=1;i<=7;i++){const o=el('option','',String(i));o.value=i;o.selected=i===octave;octaveSel.append(o);}octaveSel.onchange=()=>octave=Number(octaveSel.value);
   const rootSel=el('select','studio-select');const roots=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];roots.forEach((n,i)=>{const o=el('option','',n);o.value=i;o.selected=i===rootNote;rootSel.append(o);});rootSel.onchange=()=>rootNote=Number(rootSel.value);
   const scaleSel=el('select','studio-select');Object.keys(scaleIntervals).forEach(s=>{const o=el('option','',s.toUpperCase());o.value=s;o.selected=s===scaleName;scaleSel.append(o);});scaleSel.onchange=()=>scaleName=scaleSel.value;
@@ -138,12 +140,13 @@ function renderInstrumentPanel(host, mode) {
   const labels=Object.keys(keyNotes);
   labels.forEach((k,i)=>{const b=el('button','computer-key',k.toUpperCase());b.onpointerdown=e=>{e.preventDefault();resume();noteOn('touch'+i,i);};b.onpointerup=()=>noteOff('touch'+i);b.onpointerleave=()=>noteOff('touch'+i);keys.append(b);});
   host.append(bar,help,keys);
-  if(keyboardMode==='launchpad'||keyboardMode==='drums'){
+  if(selectedMode==='launchpad'||selectedMode==='drums'){
     const pads=el('div','launchpad-grid');
-    for(let i=0;i<16;i++){const p=el('button','launch-pad',keyboardMode==='drums'?['KICK','SNARE','C.HAT','O.HAT','CLAP','TOM 1','TOM 2','CRASH'][i%8]:String(i+1).padStart(2,'0'));p.onpointerdown=e=>{e.preventDefault();resume();noteOn('pad'+i,i);};p.onpointerup=()=>noteOff('pad'+i);p.onpointerleave=()=>noteOff('pad'+i);pads.append(p);}
+    for(let i=0;i<16;i++){const p=el('button','launch-pad',selectedMode==='drums'?['KICK','SNARE','C.HAT','O.HAT','CLAP','TOM 1','TOM 2','CRASH'][i%8]:String(i+1).padStart(2,'0'));p.onpointerdown=e=>{e.preventDefault();resume();noteOn('pad'+i,i);};p.onpointerup=()=>noteOff('pad'+i);p.onpointerleave=()=>noteOff('pad'+i);pads.append(p);}
     host.append(pads);
   }
 }
+export function setInstrumentView(target) { activeInstrumentView = target === 'drummachine' ? 'drums' : 'piano'; }
 export function mountStudio() {
   const piano=$('view-pianoroll');if(piano){piano.replaceChildren(el('h2','','PIANO ROLL / VIRTUAL KEYBOARD'));const p=el('p','muted','Toca notas con el teclado del ordenador, la pantalla o un controlador MIDI. Selecciona tonalidad y escala.');const host=el('div','instrument-panel');piano.append(p,host);renderInstrumentPanel(host,'piano');}
   const drums=$('view-drummachine');if(drums){drums.replaceChildren(el('h2','','DRUM MACHINE / LAUNCHPAD'));const p=el('p','muted','Pads de percusión y disparo de sonidos desde teclado físico o pantalla.');const host=el('div','instrument-panel');drums.append(p,host);renderInstrumentPanel(host,'drums');}
