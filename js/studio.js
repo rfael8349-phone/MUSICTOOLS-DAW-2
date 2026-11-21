@@ -1,6 +1,6 @@
 // MUSICTOOL DAW V6 — channel console, MIDI input and playable computer keyboard.
 import { state, findTrack } from './state.js';
-import { updateChannel, playInstrumentNote, stopInstrumentNote, resume } from './audio-engine.js';
+import { updateChannel, playInstrumentNote, stopInstrumentNote, resume, getChannelLevel } from './audio-engine.js';
 import { saveProject } from './storage.js';
 import { toast } from './transport.js';
 
@@ -11,6 +11,7 @@ let keyboardMode = 'piano';
 let octave = 4;
 let rootNote = 0;
 let scaleName = 'chromatic';
+let meterTimer = null;
 const held = new Map();
 const keyNotes = { a:0,w:1,s:2,e:3,d:4,f:5,t:6,g:7,y:8,h:9,u:10,j:11,k:12,o:13,l:14,p:15,';':16 };
 
@@ -82,13 +83,13 @@ export function openChannelEditor(trackId) {
 }
 
 export function renderMixer() {
-  const host=$('mixer-strips'); if(!host)return; host.replaceChildren();
+  const host=$('mixer-strips'); if(!host)return; host.replaceChildren(); if(meterTimer)clearInterval(meterTimer);
   const master=el('section','mixer-strip master-strip'); master.append(el('strong','','MASTER'));
   master.append(slider('Master',0,150,1,(state.masterVolume??.9)*100,v=>{import('./audio-engine.js').then(m=>m.setMasterVolume(v/100));},'%'));
   host.append(master);
   for(const track of state.tracks) {
-    ensureChannelSettings(track);
-    const strip=el('section','mixer-strip v6-mixer-strip');
+    ensureChannelSettings(track); updateChannel(track);
+    const strip=el('section','mixer-strip v6-mixer-strip'); strip.dataset.trackId=track.id;
     const name=el('strong','mixer-track-name',track.name);
     const meter=el('div','mixer-meter'); const fill=el('i','');meter.append(fill);
     const vol=slider('LEVEL',0,150,1,(track.volume??1)*100,v=>{track.volume=v/100;updateChannel(track);},'%');
@@ -96,6 +97,13 @@ export function renderMixer() {
     const open=el('button','btn accent','CHANNEL STUDIO');open.type='button';open.onclick=()=>openChannelEditor(track.id);
     strip.append(name,meter,vol,pan,open);host.append(strip);
   }
+  meterTimer=setInterval(()=>{
+    host.querySelectorAll('.v6-mixer-strip').forEach(strip=>{
+      const level=getChannelLevel(strip.dataset.trackId);
+      const fill=strip.querySelector('.mixer-meter i');
+      if(fill)fill.style.width=(level*100).toFixed(1)+'%';
+    });
+  },60);
 }
 
 const scaleIntervals={
