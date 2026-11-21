@@ -19,7 +19,7 @@ export const state = {
   selectedTrackId: null,
   selectedClipId: null,
   metronome: false,
-  inputGainDb: 6,
+  inputGainDb: 0,
   masterVolume: 0.9,
   // tracks: array of track objects. Audio clips hold a Blob (Float32 or encoded).
   tracks: [],         // see createTrack()
