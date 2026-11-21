@@ -122,7 +122,8 @@ export async function startRecord() {
     await new Promise((resolve) => setTimeout(resolve, beats * beatDuration * 1000));
     if (startToken !== recordStartToken || !state.isPlaying) return;
 
-    // The backing track has continued throughout the four-beat count-in.\n    // Recording uses count-in only; the continuous metronome stays off.
+    // The backing track has continued throughout the four-beat count-in.
+    // Recording uses count-in only; the continuous metronome stays off.
     await startRecording({ monitor: true, inputGainDb: state.inputGainDb ?? 0 });
     if (startToken !== recordStartToken || !state.isPlaying) {
       await stopRecording();
