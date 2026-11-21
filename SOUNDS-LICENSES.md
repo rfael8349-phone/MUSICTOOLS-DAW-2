@@ -6,7 +6,9 @@ V7.2 loads recorded instrument samples from the following public-domain (CC0 1.0
 
 - **Meta Open Sound — Meta Piano**: piano recordings, CC0 1.0.
   https://github.com/facebookincubator/Meta-open-sound
-- **Meta Open Sound — Meta Steel Guitar**: steel-string guitar recordings, CC0 1.0.
+- **FreePats — FSBS Electric Guitar Clean (small SFZ sample set)**: direct-recorded electric guitar samples, CC0 1.0.
+  https://github.com/freepats/electric-guitar-FSBS-clean
+- **Meta Open Sound — Meta Steel Guitar**: steel-string acoustic guitar recordings, CC0 1.0.
   https://github.com/facebookincubator/Meta-open-sound
 - **Karoryfer Samples — Big Little Bass**: plucked electric bass recordings, CC0 1.0.
   https://github.com/sfzinstruments/karoryfer.big-little-bass
