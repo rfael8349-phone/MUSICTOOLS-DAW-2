@@ -113,7 +113,6 @@ function renderThemes(){
  box.append(label,select);return box;
 }
 export function mountCreative(){
- preloadInstrumentSamples();
  const piano=$('view-pianoroll');if(piano){piano.replaceChildren();const wrap=node('section','creative-view piano-view');wrap.append(node('h2','creative-heading','PIANO / VIRTUAL INSTRUMENT'));const host=node('div','creative-instrument');wrap.append(host);const editor=node('div','midi-editor-panel');editor.id='midi-note-editor';wrap.append(editor);piano.append(wrap);renderPiano(host);renderMidiEditor();}
  const drums=$('view-drummachine');if(drums){drums.replaceChildren();const wrap=node('section','creative-view');wrap.append(node('h2','creative-heading','DRUM STUDIO / STEP SEQUENCER'));const host=node('div','creative-instrument');wrap.append(host);drums.append(wrap);renderDrums(host);}
  const menu=$('btn-menu');if(menu&&!$('theme-picker')){const picker=renderThemes();picker.id='theme-picker';document.querySelector('.top-actions').append(picker);}
