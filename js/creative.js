@@ -1,5 +1,5 @@
 // MUSICTOOL DAW V7.0 — Creative Studio
-import { state, createTrack, saveProject as _unused } from './state.js';
+import { state, createTrack } from './state.js';
 import { playInstrumentNote, stopInstrumentNote, resume } from './audio-engine.js';
 import { saveProject } from './storage.js';
 import { toast } from './transport.js';
@@ -7,7 +7,7 @@ import { toast } from './transport.js';
 const $ = id => document.getElementById(id);
 const held = new Map();
 let octave = 4, tone = 'synth', qwerty = false, theme = 'xp';
-let pattern = Array.from({length:6},()=>Array(16).fill(false));
+let pattern = Array.from({length:10},()=>Array(16).fill(false));
 let patternTimer = null, patternStep = 0, patternBpm = 100;
 const tones = [['synth','SYNTH'],['guitar','GUITAR'],['bass','BASS']];
 const drumRows = [['KICK',36],['SNARE',38],['CLOSED HAT',42],['OPEN HAT',46],['CLAP',39],['LOW TOM',45],['MID TOM',47],['HIGH TOM',48],['CRASH',49],['RIDE',51]];
