@@ -18,6 +18,7 @@ function ensureChannelSettings(track) {
   track.eq ||= { low:0, lowMid:0, mid:0, highMid:0, high:0 };
   track.effects ||= [];
   track.inputGainDb ??= 0;
+  track.compressor ||= { enabled:false, threshold:-18, ratio:3 };
   track.volume ??= 1;
   track.pan ??= 0;
 }
@@ -57,6 +58,12 @@ export function openChannelEditor(trackId) {
   const eqBox=el('section','studio-card'); eqBox.append(el('h3','','5-BAND PARAMETRIC EQ'));
   const bands=[['low','LOW · 80 Hz'],['lowMid','LOW MID · 250 Hz'],['mid','MID · 1 kHz'],['highMid','HIGH MID · 4 kHz'],['high','AIR · 10 kHz']];
   for(const [key,label] of bands) eqBox.append(slider(label,-18,18,.5,track.eq[key],v=>{track.eq[key]=v;updateChannel(track);},' dB'));
+  const compBox=el('section','studio-card'); compBox.append(el('h3','','COMPRESOR'));
+  const compToggle=el('label','effect-row'); const compCheck=el('input'); compCheck.type='checkbox'; compCheck.checked=!!track.compressor.enabled;
+  compToggle.append(compCheck,el('span','','DYNAMIC CONTROL')); compBox.append(compToggle);
+  compCheck.addEventListener('change',()=>{track.compressor.enabled=compCheck.checked;persist(track);});
+  compBox.append(slider('Threshold',-48,0,1,track.compressor.threshold,v=>{track.compressor.threshold=v;updateChannel(track);},' dB'));
+  compBox.append(slider('Ratio',1,12,.5,track.compressor.ratio,v=>{track.compressor.ratio=v;updateChannel(track);},':1'));
   const fxBox=el('section','studio-card'); fxBox.append(el('h3','','PEDALES Y EFECTOS'));
   const effectTypes=[['overdrive','OVERDRIVE'],['distortion','DISTORTION'],['delay','DELAY'],['reverb','REVERB'],['chorus','CHORUS']];
   for(const [type,label] of effectTypes) {
@@ -70,7 +77,7 @@ export function openChannelEditor(trackId) {
     row.append(check,title,mix);fxBox.append(row);
   }
   const format=el('p','studio-note','Procesamiento no destructivo durante la reproducción. La grabación original se conserva; los efectos se aplican en la cadena del canal.');
-  body.append(gainBox,eqBox,fxBox,format); panel.append(body); modal.append(panel); modal.classList.add('open');
+  body.append(gainBox,eqBox,compBox,fxBox,format); panel.append(body); modal.append(panel); modal.classList.add('open');
 }
 
 export function renderMixer() {
@@ -142,7 +149,17 @@ export async function connectMidi() {
   if(!navigator.requestMIDIAccess){toast('Este navegador no permite Web MIDI');return;}
   try{
     midiAccess=await navigator.requestMIDIAccess();
-    const attach=input=>{input.onmidimessage=ev=>{const [status,data1,data2]=ev.data;const cmd=status&0xf0;if(cmd===0x90&&data2>0){resume();playInstrumentNote('synth',data1,data2/127);}else if(cmd===0x80||(cmd===0x90&&data2===0)){stopInstrumentNote(data1);}};};
+    const attach=input=>{input.onmidimessage=ev=>{
+      const [status,data1,data2]=ev.data,cmd=status&0xf0;
+      if(cmd===0x90&&data2>0){resume();playInstrumentNote('synth',data1,data2/127);}
+      else if(cmd===0x80||(cmd===0x90&&data2===0)){stopInstrumentNote(data1);}
+      else if(cmd===0xb0){
+        const track=findTrack(state.selectedTrackId); if(!track)return;
+        if(data1===7){track.volume=(data2/127)*1.5;updateChannel(track);saveProject();}
+        if(data1===10){track.pan=(data2/63.5)-1;updateChannel(track);saveProject();}
+        if(data1===64&&data2>=64){track.effects||=[];let fx=track.effects.find(x=>x.type==='reverb');if(!fx){fx={type:'reverb',enabled:true,mix:.3};track.effects.push(fx);}else fx.enabled=!fx.enabled;updateChannel(track);saveProject();}
+      }
+    };
     midiAccess.inputs.forEach(attach);midiAccess.onstatechange=()=>midiAccess.inputs.forEach(attach);
     toast('MIDI conectado: '+midiAccess.inputs.size+' entrada(s)');
   }catch(e){console.error(e);toast('No se pudo conectar MIDI');}
