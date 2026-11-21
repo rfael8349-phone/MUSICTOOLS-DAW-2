@@ -1,7 +1,7 @@
 {
   "name": "MUSICTOOL DAW V7.2.0",
   "short_name": "MUSICTOOL",
-  "description": "MUSICTOOL DAW with piano, plucked string and drum voices, chromatic tuner, metronome and music theory study tools.",
+  "description": "MUSICTOOL DAW with sampled piano, electric/acoustic guitar, bass and drums, chromatic tuner, metronome and music theory study.",
   "start_url": "./index.html?v=7.2.0",
   "scope": "./",
   "display": "standalone",
