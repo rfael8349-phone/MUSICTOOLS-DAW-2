@@ -293,7 +293,7 @@
 /* ---------- BOTTOM NAV ---------- */
 #bottomnav {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   background: linear-gradient(180deg, var(--bg-2) 0%, #0a0a12 100%);
   border-top: 1px solid var(--border);
 }
@@ -681,7 +681,7 @@
   #topbar { padding-left:8px; padding-right:8px; }
   .playlist-body { grid-template-columns:176px minmax(0,1fr); }
   .track-header,.track-lane { height:50px; min-height:50px; }
-  #bottomnav { grid-template-columns:repeat(6,minmax(0,1fr)); }
+  #bottomnav { grid-template-columns:repeat(7,minmax(0,1fr)); }
 }
 
 /* Keep the phone-first touch layout intact in portrait. */
@@ -789,3 +789,67 @@
 }
 .piano-key:active { filter:brightness(1.22); transform:translateY(2px); }
 @media(max-width:600px) { .touch-piano { height:166px; } .piano-key { height:140px; } .piano-key.black-key { height:88px; } }
+
+/* V7.0 Creative Studio */
+.creative-view{height:100%;min-height:0;overflow:auto;padding:12px;box-sizing:border-box;background:var(--bg-2)}
+.creative-heading{font-size:15px;letter-spacing:1px;color:var(--cream);margin:4px 0 12px}
+.creative-instrument{display:flex;flex-direction:column;gap:12px;min-height:0}
+.creative-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+.studio-select{min-height:34px;max-width:180px;background:var(--bg-3);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:5px}
+.creative-label,.creative-footnote,.studio-note{font-size:11px;color:var(--text-dim)}
+.piano-keyboard{height:clamp(180px,42vh,390px);width:100%;position:relative;display:flex;overflow:hidden;border:1px solid #182334;border-radius:7px;background:#111;touch-action:none}
+.piano-white{position:absolute;top:0;height:100%;border:1px solid #9aa7b6;border-radius:0 0 5px 5px;background:linear-gradient(#fff,#dce5ef);color:#263548;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:10px;touch-action:none;z-index:1}
+.piano-black{position:absolute;top:0;height:62%;border:1px solid #05080d;border-radius:0 0 4px 4px;background:linear-gradient(#3d4b60,#090e17);color:#fff;z-index:3;box-shadow:0 3px 5px #0009;touch-action:none;font-size:9px}
+.piano-white.pressed,.piano-black.pressed{filter:brightness(1.35);transform:translateY(2px)}
+.drum-sequencer{display:grid;grid-template-columns:90px repeat(16,minmax(12px,1fr));gap:3px;align-items:center;overflow-x:auto}
+.drum-row-label{font-size:9px;color:var(--text-dim);white-space:nowrap}
+.drum-step{height:27px;min-width:14px;border:1px solid var(--border);border-radius:3px;background:var(--bg-3);padding:0}
+.drum-step.on{background:#3d8d87;border-color:#8bd3cb}
+.drum-step.playing{outline:2px solid #f0c36a}
+.drum-pads{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.drum-pad{min-height:55px;border:1px solid var(--border);border-radius:6px;background:linear-gradient(145deg,var(--bg-3),var(--bg));color:var(--text);font-size:10px;touch-action:manipulation}
+#theme-picker{display:flex;align-items:center;gap:5px;flex-shrink:0}
+#theme-picker strong{font-size:9px;color:var(--text-dim)}
+:root[data-theme="dark"]{--bg:#10151c;--bg-2:#171f29;--bg-3:#202b38;--cream:#e9f0f8;--text:#dbe5ef}
+:root[data-theme="classic"]{--bg:#bfc7d2;--bg-2:#d7dce3;--bg-3:#edf0f4;--text:#1d2734;--cream:#17263b}
+:root[data-theme="winamp"]{--bg:#090d0b;--bg-2:#111a14;--bg-3:#1c2920;--text:#9afc83;--cream:#baff9f}
+:root[data-theme="analog"]{--bg:#25211c;--bg-2:#332b22;--bg-3:#44382a;--text:#e7d5b5;--cream:#f0dfbd}
+:root[data-theme="modern"]{--bg:#171c28;--bg-2:#20283a;--bg-3:#2b3650;--text:#e5ecfa;--cream:#ffffff}
+@media(orientation:landscape) and (max-height:520px){.creative-view{padding:6px}.piano-keyboard{height:clamp(115px,58vh,220px)}.creative-heading{margin:0 0 5px}}
+@media(orientation:portrait){.piano-keyboard{height:clamp(220px,42vh,420px)}}
+
+/* V7.0 original visual themes */
+:root[data-theme="fl"]{--bg:#22242b;--bg-2:#2b2e38;--bg-3:#383d4a;--cream:#fff;--text:#f1f2f5;--red:#f39a35;--cyan:#75d8f0;--green:#a7d948}
+:root[data-theme="minimal"]{--bg:#101114;--bg-2:#191b20;--bg-3:#242730;--cream:#f5f6f8;--text:#e8eaf0;--red:#e36b4c;--cyan:#8bc7d8}
+:root[data-theme="cyber"]{--bg:#100b20;--bg-2:#1b1230;--bg-3:#291a42;--cream:#fff0ff;--text:#f1dfff;--red:#ff3f9f;--cyan:#31e8ff;--green:#5cffb1}
+:root[data-theme="metal"]{--bg:#101113;--bg-2:#1b1d20;--bg-3:#292c31;--cream:#f0f0ed;--text:#d9dcdf;--red:#d24b42;--cyan:#9aa9b5;--green:#8fae9a}
+.launchpad-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:100%;max-width:760px;align-self:center}
+.launchpad-pad{aspect-ratio:1.12;min-height:58px;border:1px solid hsl(var(--pad-hue) 55% 58%);border-radius:9px;background:linear-gradient(145deg,hsl(var(--pad-hue) 62% 42%),hsl(var(--pad-hue) 48% 20%));color:#fff;font-weight:800;touch-action:manipulation;box-shadow:inset 0 1px #ffffff40,0 3px 8px #0005}
+.launchpad-pad:active,.launchpad-pad.hit{filter:brightness(1.55);transform:scale(.97)}
+@media(max-width:520px){.launchpad-grid{gap:6px}.launchpad-pad{min-height:54px;font-size:10px}}
+
+
+/* V7.0 MIDI capture and touch ergonomics */
+.creative-view{height:100%;overflow:auto;padding:clamp(10px,2vw,22px);display:flex;flex-direction:column;gap:12px}
+.creative-instrument{display:flex;flex-direction:column;gap:12px;min-height:0}
+.creative-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.creative-toolbar .studio-select{min-height:36px;max-width:150px}
+.piano-keyboard{position:relative;display:flex;width:100%;height:clamp(190px,34vh,340px);min-height:180px;touch-action:none;user-select:none;background:#15151c;border:1px solid var(--border-hi);border-radius:8px;overflow:hidden}
+.piano-white{position:absolute;top:0;bottom:0;border:1px solid #aeb2b9;border-radius:0 0 5px 5px;background:linear-gradient(#fff,#e6e6e6);color:#333;z-index:1;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:10px;touch-action:none}
+.piano-white.pressed{background:#b9d8ff}
+.piano-black{position:absolute;top:0;height:62%;z-index:2;border:1px solid #050505;border-radius:0 0 4px 4px;background:linear-gradient(90deg,#333,#050505 35%,#222);color:#ddd;font-size:8px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;box-shadow:0 3px 5px #0008;touch-action:none}
+.piano-black.pressed{background:#365d86}
+.creative-footnote{font-size:11px;color:var(--text-dim);line-height:1.5}
+.drum-sequencer{display:grid;grid-template-columns:90px repeat(16,minmax(16px,1fr));gap:3px;overflow-x:auto;align-items:center}
+.drum-row-label{font-size:10px;color:var(--text-dim);white-space:nowrap}
+.drum-step{height:30px;min-width:16px;border:1px solid var(--border);border-radius:4px;background:var(--bg-3)}
+.drum-step.on{background:var(--neon);border-color:var(--neon)}
+.drum-step.playing{outline:2px solid var(--cream)}
+.drum-pads,.launchpad-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.drum-pad,.launchpad-pad{min-height:66px;border:1px solid var(--border-hi);border-radius:9px;background:linear-gradient(145deg,var(--panel-2),var(--bg-3));color:var(--text);font-weight:700;touch-action:manipulation}
+.launchpad-pad{min-height:clamp(64px,12vh,110px);background:linear-gradient(145deg,hsl(var(--pad-hue) 70% 38%),hsl(var(--pad-hue) 70% 20%));color:white;box-shadow:inset 0 1px #ffffff35,0 3px 8px #0006}
+.launchpad-pad.hit,.drum-pad:active{filter:brightness(1.6);transform:scale(.97)}
+.theme-picker{display:flex;align-items:center;gap:5px;flex-shrink:0;font-size:10px;color:var(--text-dim)}
+.theme-picker select{max-width:112px}
+@media (orientation:portrait) and (max-width:700px){.piano-keyboard{height:clamp(230px,40vh,390px)}.creative-view{padding:8px}.creative-heading{font-size:16px}}
+@media (orientation:landscape) and (max-height:600px){.piano-keyboard{height:clamp(115px,34vh,205px)}.creative-view{padding:6px;gap:6px}.piano-white{font-size:8px;padding-bottom:3px}.piano-black{font-size:7px}}

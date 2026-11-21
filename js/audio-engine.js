@@ -70,7 +70,33 @@ export function removeChannel(trackId){const ch=channels.get(trackId);if(ch){for
 export function playClick(when,accent=false){getContext();const src=ctx.createBufferSource();src.buffer=clickBuffer;const g=ctx.createGain();g.gain.value=accent?1:.6;src.connect(g);g.connect(metronomeGain);src.start(when);}
 function makeClickBuffer(c){const dur=.05,sr=c.sampleRate,b=c.createBuffer(1,Math.floor(sr*dur),sr),d=b.getChannelData(0);for(let i=0;i<d.length;i++){const t=i/sr;d[i]=Math.sin(2*Math.PI*1000*t)*Math.exp(-t*60);}return b;}
 export function schedulePlayback(fromSec,windowSec=30){getContext();stopAll();const t0=ctx.currentTime+.05;for(const track of state.tracks){if(!isAudible(track))continue;const ch=ensureChannel(track.id);updateChannel(track);for(const clip of track.clips){if(clip.startSec+clip.lengthSec<=fromSec||clip.startSec>=fromSec+windowSec)continue;scheduleClip(track,clip,ch,fromSec,t0);}}}
-function scheduleClip(track,clip,ch,fromSec,t0){if(clip.kind!=='audio'||!clip.audioBuffer)return;const when=t0+Math.max(0,clip.startSec-fromSec),offset=Math.max(0,fromSec-clip.startSec)+(clip.sourceOffsetSec||0),duration=Math.min(clip.lengthSec-Math.max(0,fromSec-clip.startSec),clip.audioBuffer.duration-offset);if(duration<=0)return;const src=ctx.createBufferSource();src.buffer=clip.audioBuffer;const g=ctx.createGain();src.connect(g);g.connect(ch.gain);src.start(when,offset,duration);const entry={source:src,gain:g,startTime:when,clipId:clip.id,trackId:track.id};src.onended=()=>{const i=activeSources.indexOf(entry);if(i>=0)activeSources.splice(i,1);};activeSources.push(entry);}
+function scheduleClip(track,clip,ch,fromSec,t0){
+ if(clip.kind==='midi'&&Array.isArray(clip.notes)){
+  const clipStart=t0+Math.max(0,clip.startSec-fromSec),clipOffset=Math.max(0,fromSec-clip.startSec);
+  for(const note of clip.notes){
+   const relative=Number(note.time)||0,duration=Math.max(.04,Number(note.duration)||.2);
+   if(relative+duration<=clipOffset)continue;
+   const when=clipStart+Math.max(0,relative-clipOffset),remaining=Math.max(.04,duration-Math.max(0,clipOffset-relative));
+   const osc=ctx.createOscillator(),gain=ctx.createGain();
+   const freq=440*Math.pow(2,((Number(note.pitch)||60)-69)/12);
+   osc.type=clip.instrument==='bass'?'square':clip.instrument==='guitar'?'triangle':'sawtooth';
+   osc.frequency.setValueAtTime(freq,when);
+   const velocity=Math.max(.03,Math.min(1,Number(note.velocity)||.8));
+   gain.gain.setValueAtTime(.0001,when);gain.gain.linearRampToValueAtTime(velocity*.22,when+.012);
+   gain.gain.setValueAtTime(velocity*.22,when+Math.max(.02,remaining-.025));gain.gain.linearRampToValueAtTime(.0001,when+remaining);
+   osc.connect(gain);gain.connect(ch.gain);osc.start(when);osc.stop(when+remaining+.01);
+   const entry={source:osc,gain,startTime:when,clipId:clip.id,trackId:track.id};
+   osc.onended=()=>{const i=activeSources.indexOf(entry);if(i>=0)activeSources.splice(i,1);try{gain.disconnect();}catch{}};
+   activeSources.push(entry);
+  }
+  return;
+ }
+ if(clip.kind!=='audio'||!clip.audioBuffer)return;
+ const when=t0+Math.max(0,clip.startSec-fromSec),offset=Math.max(0,fromSec-clip.startSec)+(clip.sourceOffsetSec||0),duration=Math.min(clip.lengthSec-Math.max(0,fromSec-clip.startSec),clip.audioBuffer.duration-offset);
+ if(duration<=0)return;
+ const src=ctx.createBufferSource();src.buffer=clip.audioBuffer;const g=ctx.createGain();src.connect(g);g.connect(ch.gain);src.start(when,offset,duration);
+ const entry={source:src,gain:g,startTime:when,clipId:clip.id,trackId:track.id};src.onended=()=>{const i=activeSources.indexOf(entry);if(i>=0)activeSources.splice(i,1);};activeSources.push(entry);
+}
 export function stopAll(){for(const e of activeSources){try{e.source.stop();}catch{}try{e.gain.disconnect();}catch{}}activeSources=[];}
 export async function decodeAudio(arrayBuffer){getContext();return await ctx.decodeAudioData(arrayBuffer.slice(0));}
 export function computePeaks(buffer,buckets=200){const data=buffer.getChannelData(0),per=Math.floor(data.length/buckets)||1,peaks=new Float32Array(buckets);for(let i=0;i<buckets;i++){let max=0;for(let j=i*per;j<Math.min((i+1)*per,data.length);j++)max=Math.max(max,Math.abs(data[j]));peaks[i]=max;}return peaks;}
