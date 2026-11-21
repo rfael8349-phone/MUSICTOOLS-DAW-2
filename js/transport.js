@@ -123,7 +123,7 @@ export async function startRecord() {
     if (startToken !== recordStartToken || !state.isPlaying) return;
 
     // The backing track has continued throughout the count-in.
-    await startRecording({ monitor: true });
+    await startRecording({ monitor: true, inputGainDb: state.inputGainDb ?? 0 });
     if (startToken !== recordStartToken || !state.isPlaying) {
       await stopRecording();
       return;
