@@ -15,6 +15,11 @@ let localRecTimer = null;
 let recordStarting = false;
 let recordStartToken = 0;
 let playToken = 0;
+function clearRecordArm() {
+  recordArmedTrack = null;
+  state.recordArmedTrackId = null;
+  for (const track of state.tracks) track.armed = false;
+}
 
 const bpmEl = () => document.getElementById('tempo-val');
 const timeEl = () => document.getElementById('display-time');
@@ -133,13 +138,14 @@ export async function startRecord() {
     }
 
     await new Promise((resolve) => setTimeout(resolve, beats * beatDuration * 1000));
-    if (startToken !== recordStartToken || !state.isPlaying) return;
+    if (startToken !== recordStartToken || !state.isPlaying) { clearRecordArm(); return; }
 
     // The backing track has continued throughout the four-beat count-in.
     // Recording uses count-in only; the continuous metronome stays off.
     await startRecording({ monitor: false, inputGainDb: track.inputGainDb ?? state.inputGainDb ?? 0, inputDeviceId: track.inputDeviceId || null });
     if (startToken !== recordStartToken || !state.isPlaying) {
       await stopRecording();
+      clearRecordArm();
       return;
     }
     recordStartSec = state.playhead;
@@ -153,9 +159,7 @@ export async function startRecord() {
   } catch (err) {
     console.error('Record start failed:', err);
     if (startedTransportHere) pause();
-    recordArmedTrack = null;
-    state.recordArmedTrackId = null;
-    for (const t of state.tracks) t.armed = false;
+    clearRecordArm();
     toast(err?.message?.includes('getUserMedia') ? 'Microphone permission required' : 'Could not start recording');
   } finally {
     recordStarting = false;
@@ -175,6 +179,7 @@ export async function stopRecord() {
   pause();
 
   if (!result.wavBlob || !result.audioBuffer) {
+    clearRecordArm();
     toast('No audio captured');
     return;
   }
@@ -182,8 +187,7 @@ export async function stopRecord() {
   const lengthSec = result.audioBuffer.duration;
   const targetTrack = state.tracks.find((t) => t.id === state.recordArmedTrackId);
   if (!targetTrack) {
-    recordArmedTrack = null;
-    state.recordArmedTrackId = null;
+    clearRecordArm();
     toast('Recording track no longer exists');
     return;
   }
@@ -198,10 +202,8 @@ export async function stopRecord() {
     name: 'Take',
   };
   targetTrack.clips.push(clip);
-  recordArmedTrack = null;
-  state.recordArmedTrackId = null;
+  clearRecordArm();
   // Keep the just-recorded lane selected, but clear transient REC arming.
-  for (const t of state.tracks) t.armed = false;
   state.selectedTrackId = targetTrack.id;
 
   onTransportTick(stopSec);
