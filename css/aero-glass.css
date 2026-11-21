@@ -70,3 +70,60 @@ html, body { background: radial-gradient(ellipse at 15% 0%, #263e5d 0%, var(--bg
   #topbar, #bottomnav { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
   .btn { min-height: 36px; }
 }
+
+/* iPhone notch / Dynamic Island and Android camera cutout safe areas */
+html {
+  min-height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+body {
+  min-height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  padding: 0;
+}
+#app {
+  position: fixed;
+  inset: env(safe-area-inset-top, 0px)
+         env(safe-area-inset-right, 0px)
+         env(safe-area-inset-bottom, 0px)
+         env(safe-area-inset-left, 0px);
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+#topbar, #bottomnav, #views { min-width: 0; }
+#topbar { padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); }
+#bottomnav { padding-bottom: 0; }
+@media (orientation: landscape) {
+  #app {
+    /* Keep all controls inside the usable area on phones with side notches. */
+    grid-template-rows: minmax(40px, var(--topbar-h)) minmax(0, 1fr) minmax(42px, var(--nav-h));
+  }
+  #topbar {
+    gap: 5px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  .brand { gap: 5px; }
+  .brand-mascot { width: 27px; height: 27px; }
+  .transport { gap: 3px; padding: 2px 4px; }
+  .transport-btn { min-width: 30px; min-height: 30px; padding: 2px 5px; }
+  .display { min-width: 68px; padding: 2px 5px; }
+  .display.small { min-width: 46px; }
+  #bottomnav .nav-btn { min-width: 0; padding-top: 3px; padding-bottom: 3px; }
+}
+@media (orientation: landscape) and (max-height: 480px) {
+  :root { --topbar-h: 42px; --nav-h: 42px; }
+  #topbar { padding-top: 2px; padding-bottom: 2px; }
+  #bottomnav .nav-icon { font-size: 14px; }
+  #bottomnav .nav-label { font-size: 7px; }
+  .playlist-body { top: 40px; }
+}
+@supports not (height: 100dvh) {
+  html, body { min-height: 100vh; }
+}
+
