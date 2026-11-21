@@ -165,11 +165,11 @@ function quantizedNote(index) {
 }
 function noteOn(key,index,velocity=0.8) {
   if(held.has(key))return;
-  if(keyboardModes[activeInstrumentView]==='drums') { const note=36+index; playInstrumentNote('drum',note,velocity); held.set(key,{note});return; }
-  if(keyboardModes[activeInstrumentView]==='launchpad') { const note=48+(index%16); playInstrumentNote('pad',note,velocity); held.set(key,{note});return; }
-  const note=quantizedNote(index);playInstrumentNote(instrumentTone,note,velocity);held.set(key,{note});
+  if(keyboardModes[activeInstrumentView]==='drums') { const note=36+index; playInstrumentNote('drum',note,velocity); held.set(key,{note,type:'drum',trackId:state.selectedTrackId||null});return; }
+  if(keyboardModes[activeInstrumentView]==='launchpad') { const note=48+(index%16); playInstrumentNote('pad',note,velocity); held.set(key,{note,type:'pad',trackId:state.selectedTrackId||null});return; }
+  const note=quantizedNote(index);playInstrumentNote(instrumentTone,note,velocity);held.set(key,{note,type:instrumentTone,trackId:state.selectedTrackId||null});
 }
-function noteOff(key) { const item=held.get(key);if(!item)return;if(item.note!==undefined)stopInstrumentNote(item.note);held.delete(key); }
+function noteOff(key) { const item=held.get(key);if(!item)return;if(item.note!==undefined)stopInstrumentNote(item.note,item.type||null,item.trackId||null);held.delete(key); }
 function renderInstrumentPanel(host, mode) {
   host.replaceChildren();
   const selectedMode=keyboardModes[mode]||'piano';
@@ -205,7 +205,7 @@ function renderInstrumentPanel(host, mode) {
       const pc=(note%12), black=[1,3,6,8,10].includes(pc);
       const key=el('button','piano-key'+(black?' black-key':''),roots[pc]);
       key.setAttribute('aria-label','Nota '+roots[pc]+' octava '+Math.floor(note/12));
-      key.onpointerdown=e=>{e.preventDefault();resume();const k='touch-piano-'+i;playInstrumentNote(instrumentTone,note,.8);held.set(k,{note});};
+      key.onpointerdown=e=>{e.preventDefault();resume();const k='touch-piano-'+i;playInstrumentNote(instrumentTone,note,.8);held.set(k,{note,type:instrumentTone,trackId:state.selectedTrackId||null});};
       const off=()=>noteOff('touch-piano-'+i);
       key.onpointerup=off;key.onpointercancel=off;key.onpointerleave=off;
       keys.append(key);
