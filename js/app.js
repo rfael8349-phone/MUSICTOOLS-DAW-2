@@ -100,8 +100,11 @@ async function boot() {
   }
 
   if (state.tracks.length === 0) {
-    createTrack('audio', 'Guitar 1');
+    const first = createTrack('audio', 'Guitar 1');
     createTrack('audio', 'Guitar 2');
+    state.selectedTrackId = first.id;
+  } else if (!state.selectedTrackId || !state.tracks.some((t) => t.id === state.selectedTrackId)) {
+    state.selectedTrackId = state.tracks.find((t) => t.kind === 'audio')?.id || state.tracks[0].id;
   }
 
   try {

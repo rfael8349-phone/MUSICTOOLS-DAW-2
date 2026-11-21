@@ -86,12 +86,18 @@ export function rewind() {
 // while it plays; microphone capture begins on the next bar.
 export async function startRecord() {
   if (state.isRecording || recordStarting) return;
-  const track = state.tracks.find((t) => t.armed) || state.tracks.find((t) => t.kind === 'audio');
+  // Destination priority: explicitly armed track, selected audio track, then first audio track.
+  // Lock the destination ID before any async permission/count-in work begins.
+  const armedTrack = state.tracks.find((t) => t.armed && t.kind === 'audio');
+  const selectedTrack = state.tracks.find((t) => t.id === state.selectedTrackId && t.kind === 'audio');
+  const track = armedTrack || selectedTrack || state.tracks.find((t) => t.kind === 'audio');
   if (!track) {
     toast('Arm an audio track first');
     return;
   }
 
+  recordArmedTrack = track;
+  state.recordArmedTrackId = track.id;
   recordStarting = true;
   const startToken = ++recordStartToken;
   recBtn().classList.add('counting-in');
@@ -129,8 +135,6 @@ export async function startRecord() {
       await stopRecording();
       return;
     }
-    recordArmedTrack = track;
-    state.recordArmedTrackId = track.id;
     recordStartSec = state.playhead;
     state.isRecording = true;
     recBtn().classList.add('active');
@@ -166,6 +170,14 @@ export async function stopRecord() {
   }
 
   const lengthSec = result.audioBuffer.duration;
+  const targetTrack = state.tracks.find((t) => t.id === state.recordArmedTrackId);
+  if (!targetTrack) {
+    recordArmedTrack = null;
+    state.recordArmedTrackId = null;
+    toast('Recording track no longer exists');
+    return;
+  }
+
   const clip = {
     id: 'clip_' + Date.now().toString(36),
     startSec: recordStartSec,
@@ -175,13 +187,15 @@ export async function stopRecord() {
     audioBuffer: result.audioBuffer,
     name: 'Take',
   };
-  recordArmedTrack.clips.push(clip);
+  targetTrack.clips.push(clip);
+  recordArmedTrack = null;
+  state.recordArmedTrackId = null;
 
   onTransportTick(stopSec);
   const { refreshAll } = await import('./playlist.js');
   refreshAll();
   await saveProject();
-  toast(`Recorded ${lengthSec.toFixed(1)}s on "${recordArmedTrack.name}"`);
+  toast(`Recorded ${lengthSec.toFixed(1)}s on "${targetTrack.name}"`);
 }
 
 // ---- Metronome ----
