@@ -1,0 +1,94 @@
+/* MUSICTOOL V7.3 — adaptive workspaces and motion */
+:root{--motion-fast:140ms;--motion-ui:220ms;--motion-slow:360ms}
+html{scroll-behavior:smooth}
+body{transition:background-color var(--motion-ui) ease,color var(--motion-ui) ease}
+#app{isolation:isolate;grid-template-rows:var(--topbar-h) 38px minmax(0,1fr) var(--nav-h)}
+.view.active{animation:mt-view-in var(--motion-ui) cubic-bezier(.2,.75,.25,1) both}
+.btn,.nav-btn,.compact-toggle,.tool-tab,.track-header,.clip{transition:background-color var(--motion-fast) ease,border-color var(--motion-fast) ease,color var(--motion-fast) ease,box-shadow var(--motion-fast) ease,transform var(--motion-fast) ease}
+.btn:hover,.nav-btn:hover,.compact-toggle:hover{filter:brightness(1.12)}
+.btn:active,.nav-btn:active{transform:scale(.97)}
+@keyframes mt-view-in{from{opacity:.72;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes mt-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--cyan) 0%,transparent)}50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--cyan) 18%,transparent)}}
+#workspace-switcher{display:flex;align-items:center;gap:5px;margin-left:4px;flex-shrink:0}
+#workspace-switcher label{font-size:10px;color:var(--text-dim);letter-spacing:.06em}
+#workspace-mode{max-width:112px;min-height:30px;border:1px solid var(--border);border-radius:8px;background:var(--bg-3);color:var(--text);padding:4px 7px;font-size:11px}
+#device-tools{display:flex;align-items:center;gap:6px;padding:5px 9px;background:var(--bg-2);border-bottom:1px solid var(--border);font-size:11px;overflow:auto}
+#device-tools .device-status{white-space:nowrap;color:var(--text-dim)}
+#device-tools button{white-space:nowrap}
+#precision-cursor{position:fixed;z-index:5000;width:34px;height:34px;border:1.5px solid var(--cyan);border-radius:50%;background:color-mix(in srgb,var(--cyan) 13%,transparent);box-shadow:0 0 0 5px color-mix(in srgb,var(--cyan) 8%,transparent),0 0 16px color-mix(in srgb,var(--cyan) 35%,transparent);pointer-events:none;transform:translate(-50%,-50%);display:none}
+#precision-cursor:after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;background:var(--cyan);border-radius:50%;transform:translate(-50%,-50%)}
+body.precision-active #precision-cursor{display:block}
+body[data-workspace="tablet"] #app{--nav-h:58px}
+body[data-workspace="tablet"] .playlist-body{grid-template-columns:205px minmax(0,1fr)}
+body[data-workspace="tablet"] .placeholder-panel{max-width:1100px;padding:22px}
+body[data-workspace="tablet"] #bottomnav{grid-template-columns:repeat(7,minmax(72px,1fr));justify-content:center}
+body[data-workspace="tablet"] .nav-btn{font-size:10px}
+body[data-workspace="desktop"] #app{grid-template-rows:64px 1fr 54px}
+body[data-workspace="desktop"] #topbar{padding-inline:18px;gap:14px}
+body[data-workspace="desktop"] .brand-text{display:flex}
+body[data-workspace="desktop"] .playlist-body{grid-template-columns:230px minmax(0,1fr)}
+body[data-workspace="desktop"] .track-header,body[data-workspace="desktop"] .track-lane{height:64px}
+body[data-workspace="desktop"] .placeholder-panel{max-width:1500px;padding:28px}
+body[data-workspace="desktop"] #bottomnav{grid-template-columns:repeat(7,minmax(90px,150px));justify-content:center}
+body[data-workspace="desktop"] .nav-btn{flex-direction:row;gap:8px;font-size:11px}
+body[data-workspace="desktop"] .nav-btn .nav-label{font-size:10px}
+body[data-workspace="desktop"] .transport{gap:7px;padding:6px 9px}
+body[data-workspace="desktop"] .transport-btn{min-width:42px;min-height:38px}
+@media(max-width:700px){#workspace-switcher label{display:none}#workspace-mode{max-width:88px;font-size:10px}#device-tools{font-size:10px}}
+@media(min-width:701px) and (max-width:1100px){#topbar{gap:9px}.brand-text{display:flex}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* V7.4 — safe-area layout and viewport-fitted 4x4 performance pads.
+   Safe-area insets belong inside the top/bottom bars, not as padding on #app:
+   padding the grid container itself used to create oversized empty edges. */
+#app{
+  padding:0;
+  grid-template-rows:
+    calc(var(--topbar-h) + env(safe-area-inset-top))
+    38px
+    minmax(0,1fr)
+    calc(var(--nav-h) + env(safe-area-inset-bottom));
+}
+#topbar{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top);
+  padding-left:max(8px,env(safe-area-inset-left));
+  padding-right:max(8px,env(safe-area-inset-right));
+}
+#bottomnav{
+  box-sizing:border-box;
+  padding-left:env(safe-area-inset-left);
+  padding-right:env(safe-area-inset-right);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+#view-launchpad{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}
+#view-launchpad .creative-view{width:100%;max-width:920px;min-height:100%;margin-inline:auto;padding:clamp(6px,1.6vw,16px);box-sizing:border-box;display:flex;flex-direction:column}
+#view-launchpad .creative-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
+#view-launchpad .launchpad-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-rows:repeat(4,minmax(0,1fr));
+  gap:clamp(5px,1.25vw,10px);
+  width:min(100%,760px);
+  margin:clamp(6px,1.5vh,12px) auto;
+}
+#view-launchpad .launchpad-pad{
+  width:100%;min-width:0;min-height:0;aspect-ratio:1.15;
+  max-height:clamp(54px,17vh,132px);
+  padding:clamp(4px,1vw,10px);
+  white-space:normal;overflow-wrap:anywhere;touch-action:manipulation;
+}
+#view-launchpad .launchpad-pad.hit{transform:scale(.96);filter:brightness(1.35);box-shadow:0 0 22px color-mix(in srgb,var(--cyan) 38%,transparent)}
+.channel-editor-window{max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);overflow:auto}
+@media(max-width:520px){
+  #view-launchpad .launchpad-pad{font-size:clamp(9px,2.5vw,13px)}
+  #view-launchpad .creative-heading{font-size:clamp(15px,4vw,20px)}
+}
+@media(orientation:landscape) and (max-height:520px){
+  #view-launchpad .creative-view{padding:4px}
+  #view-launchpad .creative-heading{margin:2px 0;font-size:14px}
+  #view-launchpad .launchpad-grid{width:min(100%,680px);gap:5px;margin:4px auto}
+  #view-launchpad .launchpad-pad{max-height:clamp(38px,15vh,70px);aspect-ratio:1.7;font-size:10px}
+  #device-tools{min-height:30px;padding-block:2px}
+}
+@media(prefers-reduced-motion:reduce){#view-launchpad .launchpad-pad.hit{transform:none}}

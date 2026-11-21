@@ -90,15 +90,46 @@ function renderMidiEditor(){
 function renderDrums(host){
  host.replaceChildren();
  const bar=node('div','creative-toolbar');
- const style=node('select','studio-select');['CUMBIA','ROCK','PUNK','POST-PUNK','REGGAE','ELECTRONIC'].forEach(x=>style.append(node('option','',x)));style.value=drumStyle;
- const presets={CUMBIA:[[0,4,8,12],[4,12],[0,2,4,6,8,10,12,14],[2,6,10,14]],ROCK:[[0,8],[4,12],[0,2,4,6,8,10,12,14],[4,12]],PUNK:[[0,4,8,12],[4,12],[0,2,4,6,8,10,12,14],[4,12]],'POST-PUNK':[[0,6,8,14],[4,12],[0,2,4,6,8,10,12,14],[4,12]],REGGAE:[[0,8],[4,12],[2,6,10,14],[4,12]],ELECTRONIC:[[0,4,8,12],[4,12],[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],[2,6,10,14]]};
- const applyPreset=()=>{const p=presets[style.value]||presets.CUMBIA;pattern=Array.from({length:10},(_,i)=>Array.from({length:16},(_,step)=>(p[i]||[]).includes(step)));};
+ const style=node('select','studio-select');
+ const genres=[
+  ['CUMBIA','CUMBIA'],['ROCK','ROCK'],['METAL','METAL'],['PUNK','PUNK'],['HEAVY','HEAVY METAL'],
+  ['BALLAD','BALADA'],['WALTZ','VALS'],['RANCHERA','RANCHERA'],['POST-PUNK','POST-PUNK'],['REGGAE','REGGAE'],['ELECTRONIC','ELECTRÓNICA']
+ ];
+ genres.forEach(([v,label])=>{const o=node('option','',label);o.value=v;style.append(o);});
+ style.value=drumStyle;
+ const presets={
+  CUMBIA:[[0,8],[4,12],[0,2,4,6,8,10,12,14],[2,6,10,14],[4,12]],
+  ROCK:[[0,8],[4,12],[0,2,4,6,8,10,12,14],[4,12],[8]],
+  METAL:[[0,2,4,6,8,10,12,14],[4,12],[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],[4,12],[0,8]],
+  PUNK:[[0,4,8,12],[4,12],[0,2,4,6,8,10,12,14],[4,12],[8,12]],
+  HEAVY:[[0,2,4,6,8,10,12,14],[4,12],[0,2,4,6,8,10,12,14],[4,12],[0,8,12]],
+  BALLAD:[[0,8],[4,12],[0,4,8,12],[2,6,10,14],[8]],
+  WALTZ:[[0,4,8,12],[4,12],[0,4,8,12],[2,6,10,14],[8]],
+  RANCHERA:[[0,6,8,14],[4,12],[0,2,4,6,8,10,12,14],[4,12],[8,14]],
+  'POST-PUNK':[[0,6,8,14],[4,12],[0,2,4,6,8,10,12,14],[4,12],[8]],
+  REGGAE:[[0,8],[4,12],[2,6,10,14],[4,12],[8]],
+  ELECTRONIC:[[0,4,8,12],[4,12],[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],[2,6,10,14],[8,12]]
+ };
+ const applyPreset=()=>{const p=presets[style.value]||presets.ROCK;pattern=Array.from({length:10},(_,i)=>Array.from({length:16},(_,step)=>(p[i]||[]).includes(step)));};
  style.onchange=()=>{drumStyle=style.value;applyPreset();renderDrums(host);};
  const bpm=node('input','studio-select');bpm.type='number';bpm.min=50;bpm.max=220;bpm.value=patternBpm;bpm.style.width='76px';bpm.onchange=()=>patternBpm=Math.max(50,Math.min(220,Number(bpm.value)||100));
  const play=node('button','btn accent','▶ PATTERN');play.onclick=()=>{if(patternTimer){clearInterval(patternTimer);patternTimer=null;play.textContent='▶ PATTERN';return;}patternStep=0;play.textContent='■ STOP';patternTimer=setInterval(()=>{drumRows.forEach((r,i)=>{if(pattern[i][patternStep]){resume();playInstrumentNote('drum',r[1],.85);}});host.querySelectorAll('[data-step]').forEach(x=>x.classList.toggle('playing',Number(x.dataset.step)===patternStep));patternStep=(patternStep+1)%16;},60000/patternBpm/4);};
  const clear=node('button','btn','CLEAR');clear.onclick=()=>{pattern=pattern.map(r=>r.map(()=>false));renderDrums(host);};
+ const createClip=node('button','btn accent','＋ CREAR CLIP EN PLAYLIST');
+ createClip.onclick=async()=>{
+  const bpmValue=Math.max(30,Math.min(300,Number(patternBpm)||120));
+  const secondsPerStep=60/bpmValue/4;
+  const notes=[];
+  pattern.forEach((steps,row)=>steps.forEach((active,step)=>{if(active)notes.push({pitch:drumRows[row][1],time:step*secondsPerStep,duration:.12,velocity:row===0?.98:.82});}));
+  if(!notes.length){toast('Activa algunos pasos antes de crear el clip');return;}
+  const track=createTrack('midi','Batería · '+drumStyle);
+  track.instrumentRole='drums';track.genre=drumStyle.toLowerCase();
+  track.clips.push({id:'drum_'+Date.now().toString(36),kind:'midi',startSec:Math.max(0,state.playhead),lengthSec:Math.max(1,16*secondsPerStep),name:'Ritmo '+drumStyle,instrument:'drum',notes});
+  state.selectedTrackId=track.id;await saveProject();refreshAll();
+  toast('Patrón '+drumStyle+' creado como clip MIDI en '+track.name);
+ };
  if(!drumPatternInitialized){applyPreset();drumPatternInitialized=true;}
- bar.append(style,node('span','creative-label','BPM'),bpm,play,clear);host.append(bar);
+ bar.append(style,node('span','creative-label','BPM'),bpm,play,clear,createClip);host.append(bar);
  const grid=node('div','drum-sequencer');
  drumRows.forEach((r,i)=>{const label=node('div','drum-row-label',r[0]);grid.append(label);for(let s=0;s<16;s++){const b=node('button','drum-step'+(pattern[i][s]?' on':''));b.dataset.step=s;b.setAttribute('aria-label',r[0]+' step '+(s+1));b.onclick=()=>{pattern[i][s]=!pattern[i][s];b.classList.toggle('on',pattern[i][s]);};grid.append(b);}});
  host.append(grid);

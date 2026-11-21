@@ -13,7 +13,7 @@ export function createTrack(kind='audio',name=null) {
   const colors=['var(--track-1)','var(--track-2)','var(--track-3)','var(--track-4)','var(--track-5)','var(--track-6)','var(--track-7)','var(--track-8)'];
   const idx=state.tracks.length;
   const track={
-    id:newId('trk'),kind,name:name||`${kind==='audio'?'Audio':kind==='midi'?'MIDI':'Drum'} ${idx+1}`,
+    id:newId('trk'),kind,instrumentRole:kind==='midi'?'midi':'audio',genre:'rock',name:name||`${kind==='audio'?'Audio':kind==='midi'?'MIDI':'Drum'} ${idx+1}`,
     color:colors[idx%colors.length],volume:1,pan:0,mute:false,solo:false,armed:false,input:null,
     clips:[],takes:[],inputGainDb:0,inputDeviceId:null,
     eq:{low:0,lowMid:0,mid:0,highMid:0,high:0},
