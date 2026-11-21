@@ -291,8 +291,12 @@ export function playInstrumentNote(type,note,velocity=.8){
   const source=ctx.createBufferSource();source.buffer=voice.buffer;source.playbackRate.value=voice.rate;
   const gain=ctx.createGain(),now=ctx.currentTime,level=Math.max(.02,Math.min(1,velocity));
   gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(level*.76,now+.012);
-  source.connect(gain);gain.connect(master);
-  const entry={source,gain,oneShot:voice.oneShot};
+  source.connect(gain);
+  // Live instruments pass through the currently selected track strip, so its EQ, gain and FX are audible.
+  const selected=state.tracks.find(track=>track.id===state.selectedTrackId);
+  const destination=selected?ensureChannel(selected.id).gain:master;
+  gain.connect(destination);
+  const entry={source,gain,oneShot:voice.oneShot,trackId:selected?.id||null};
   voices.set(key,entry);
   source.onended=()=>{if(voices.get(key)===entry)voices.delete(key);try{gain.disconnect();}catch{}};
   source.start(now);
