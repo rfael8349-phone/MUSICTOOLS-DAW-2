@@ -1,4 +1,4 @@
-import { playInstrumentNote, resume, preloadInstrumentSamples } from './audio-engine.js';
+import { playInstrumentNote, resume } from './audio-engine.js';
 const $ = id => document.getElementById(id);
 const banks = {
   dubstep: [['KICK',36],['SNARE',38],['CLAP',39],['HAT',42],['SUB C',48],['SUB D',50],['SUB F',53],['SUB G',55],['IMPACT',49],['RIDE',51],['TOM',45],['NOISE',55],['FX 1',57],['FX 2',52],['PERC 1',47],['PERC 2',48]],
@@ -7,7 +7,6 @@ const banks = {
   electronic: [['KICK',36],['SNARE',38],['CLAP',39],['HAT',42],['RIM',37],['TOM',45],['CRASH',49],['RIDE',51],['SUB',48],['BASS',43],['PERC 1',47],['PERC 2',50],['FX 1',52],['FX 2',55],['FX 3',57],['NOISE',56]]
 };
 export function mountLaunchpad(){
- preloadInstrumentSamples();
  const host=$('view-launchpad'); if(!host || host.dataset.mounted) return; host.dataset.mounted='1';
  const wrap=document.createElement('section');wrap.className='creative-view';
  const heading=document.createElement('h2');heading.className='creative-heading';heading.textContent='LAUNCHPAD / PERFORMANCE PADS';
