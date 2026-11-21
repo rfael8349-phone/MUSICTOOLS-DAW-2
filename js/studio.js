@@ -168,7 +168,7 @@ export async function connectMidi() {
         if(data1===10){track.pan=(data2/63.5)-1;updateChannel(track);saveProject();}
         if(data1===64&&data2>=64){track.effects||=[];let fx=track.effects.find(x=>x.type==='reverb');if(!fx){fx={type:'reverb',enabled:data2>=64,mix:.3};track.effects.push(fx);}else fx.enabled=data2>=64;updateChannel(track);saveProject();}
       }
-    };
+    };};
     midiAccess.inputs.forEach(attach);midiAccess.onstatechange=()=>midiAccess.inputs.forEach(attach);
     toast('MIDI conectado: '+midiAccess.inputs.size+' entrada(s)');
   }catch(e){console.error(e);toast('No se pudo conectar MIDI');}
