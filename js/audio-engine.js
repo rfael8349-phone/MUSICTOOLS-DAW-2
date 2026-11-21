@@ -121,8 +121,8 @@ export function schedulePlayback(fromSec, windowSec = 30) {
 async function scheduleClip(track, clip, ch, fromSec, t0) {
   if (clip.kind !== 'audio' || !clip.audioBuffer) return;
   const when = t0 + Math.max(0, clip.startSec - fromSec);
-  const offset = Math.max(0, fromSec - clip.startSec);
-  const duration = Math.min(clip.lengthSec - offset, clip.audioBuffer.duration - offset);
+  const offset = Math.max(0, fromSec - clip.startSec) + (clip.sourceOffsetSec || 0);
+  const duration = Math.min(clip.lengthSec - Math.max(0, fromSec - clip.startSec), clip.audioBuffer.duration - offset);
   if (duration <= 0) return;
 
   const src = ctx.createBufferSource();
