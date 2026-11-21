@@ -132,6 +132,7 @@ export function nowSec(){getContext();return ctx.currentTime;}
 
 // MUSICTOOL sampled instrument engine — CC0 recordings, cached for offline use.
 const instrumentBuffers=new Map(),instrumentLoads=new Map(),voices=new Map(),pendingVoices=new Map();
+let samplePreloadPromise=null;
 const SAMPLE_CACHE='musicttool-instrument-bank-v72';
 const META='https://raw.githubusercontent.com/facebookincubator/Meta-open-sound/main/systems/instruments/';
 const BASS='https://raw.githubusercontent.com/sfzinstruments/karoryfer.big-little-bass/main/Samples/';
@@ -254,22 +255,27 @@ function makeSynthBuffer(note){
  for(let i=0;i<length;i++){const t=i/sr,env=Math.min(1,t*9)*Math.exp(-t*1.65);data[i]=(Math.sin(2*Math.PI*frequency*t)+.24*Math.sin(4*Math.PI*frequency*t)+.1*Math.sin(6*Math.PI*frequency*t))*env*.24;}
  instrumentBuffers.set(key,buffer);return buffer;
 }
-export async function preloadInstrumentSamples(){
- const urls=[...pianoMap,...guitarMap,...bassMap].map(x=>x[1]).concat(Object.values(drumSamples));
- const unique=[...new Set(urls)];
- let cache=null;try{if('caches'in window)cache=await caches.open(SAMPLE_CACHE);}catch{}
- const results=[];
- for(let i=0;i<unique.length;i+=4){
-  const batch=await Promise.allSettled(unique.slice(i,i+4).map(async url=>{
-   if(cache&&await cache.match(url))return true;
-   const response=await fetch(url,{mode:'cors'});if(!response.ok)throw new Error('HTTP '+response.status);
-   if(cache)await cache.put(url,response.clone());return true;
-  }));
-  results.push(...batch);
- }
- const ready=results.filter(x=>x.status==='fulfilled').length;
- console.info('MUSICTOOL sample bank:',ready+'/'+unique.length,'files cached');
- return {ready,total:unique.length};
+export function preloadInstrumentSamples(){
+ if(samplePreloadPromise)return samplePreloadPromise;
+ samplePreloadPromise=(async()=>{
+  const urls=[...pianoMap,...guitarMap,...bassMap].map(x=>x[1]).concat(Object.values(drumSamples));
+  const unique=[...new Set(urls)];
+  let cache=null;try{if('caches'in window)cache=await caches.open(SAMPLE_CACHE);}catch{}
+  const results=[];
+  for(let i=0;i<unique.length;i+=4){
+   const batch=await Promise.allSettled(unique.slice(i,i+4).map(async url=>{
+    if(cache&&await cache.match(url))return true;
+    const response=await fetch(url,{mode:'cors'});if(!response.ok)throw new Error('HTTP '+response.status);
+    if(cache)try{await cache.put(url,response.clone());}catch{}
+    return true;
+   }));
+   results.push(...batch);
+  }
+  const ready=results.filter(x=>x.status==='fulfilled').length;
+  console.info('MUSICTOOL CC0 sample bank:',ready+'/'+unique.length,'files ready for playback');
+  return {ready,total:unique.length};
+ })().catch(error=>{samplePreloadPromise=null;console.warn('Sample bank preload failed:',error);return {ready:0,total:0,error};});
+ return samplePreloadPromise;
 }
 export function playInstrumentNote(type,note,velocity=.8){
  getContext();const key=String(note);stopInstrumentNote(note);
