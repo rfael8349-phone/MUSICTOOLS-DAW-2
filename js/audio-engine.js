@@ -215,9 +215,16 @@ function nearestMap(map,note){
 }
 function resolveSample(type,note,velocity=.8){
  const n=Math.round(Number(note)||60);
- if(type==='piano')return {...nearestMap(pianoMap,n),oneShot:false};
+ if(type==='piano'){
+  // Four recorded piano velocity layers; stronger playing selects a brighter, harder-hit recording.
+  const layer=velocity<.28?1:velocity<.52?2:velocity<.78?3:4;
+  return {rootNote:n,url:pianoUrl(Math.max(21,Math.min(108,n)),layer),oneShot:false};
+ }
  if(type==='guitar')return electricUrl(n);
- if(type==='acoustic')return {...nearestMap(acousticMap,n),oneShot:false};
+ if(type==='acoustic'){
+  const layer=velocity<.34?1:velocity<.68?2:3;
+  return {...acousticUrl(n,layer),oneShot:false};
+ }
  if(type==='bass')return {...nearestMap(bassMap,n),oneShot:false};
  if(type==='drum'){const name=drumSamples[drumMap[n]||'snare'];return {rootNote:n,url:name,oneShot:true};}
  if(type==='pad'){const name=drumSamples[padOrder[(n-48+16)%16]];return {rootNote:n,url:name,oneShot:true};}
