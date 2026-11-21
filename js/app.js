@@ -8,6 +8,7 @@ import { mountSamples } from './samples.js';
 import { mountStudio, setInstrumentView } from './studio.js';
 import { mountCreative } from './creative.js';
 import { mountLaunchpad } from './launchpad.js';
+import { mountTools } from './tools.js';
 
 const byId = (id) => document.getElementById(id);
 
@@ -54,6 +55,7 @@ function wireNavigation() {
       document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.dataset.view === target));
       if (target === 'playlist') playlist.refreshAll();
       if (target === 'samples') mountSamples();
+      if (target === 'tools') mountTools();
       if (target === 'mixer') playlist.renderMixer();
     });
   }
@@ -117,6 +119,7 @@ async function boot() {
     mountStudio();
     mountCreative();
     mountLaunchpad();
+    mountTools();
     playlist.renderMixer();
   } catch (err) {
     showBootError(err);
@@ -127,7 +130,7 @@ async function boot() {
   transport.toast(hadSaved ? 'Project restored' : 'MUSICTOOL ready');
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js?v=7.0.1',{updateViaCache:'none'}).catch((err) => console.warn('Service worker:', err));
+    navigator.serviceWorker.register('service-worker.js?v=7.1',{updateViaCache:'none'}).catch((err) => console.warn('Service worker:', err));
   }
 }
 
