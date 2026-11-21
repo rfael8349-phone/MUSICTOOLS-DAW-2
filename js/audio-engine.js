@@ -147,7 +147,7 @@ function velocityLayer(velocity,layers=4){
  if(layers===4)return v<.25?1:v<.5?2:v<.88?3:4;
  return v<.35?1:v<.72?2:3;
 }
-const pianoMap=Array.from({length:25},(_,i)=>{const note=48+i;return [note,pianoUrl(note,3)];});
+const pianoMap=Array.from({length:88},(_,i)=>{const note=21+i;return [note,pianoUrl(note,3)];});
 const acousticZones=[
  {root:40,max:60,id:'StringLowE'},{root:45,max:65,id:'StringA'},
  {root:50,max:70,id:'StringD'},{root:55,max:75,id:'StringG'},
@@ -187,7 +187,7 @@ const bassRoots=[
  [48,'c3'],[50,'d3'],[52,'e3'],[53,'f3'],[55,'g3'],[57,'a3'],[59,'b3'],[60,'c4'],
  [62,'d4'],[64,'e4'],[65,'f4'],[67,'g4'],[69,'a4'],[71,'b4'],[72,'c5']
 ];
-const bassMap=[40,45,50,55].map(note=>{const root=bassRoots.find(x=>x[0]===note);return [note,sample(BASS,'big_little_pluck_'+root[1]+'_f_rr1.wav')];});
+const bassMap=bassRoots.map(([note,name])=>[note,sample(BASS,'big_little_pluck_'+name+'_f_rr1.wav')]);
 const drumSamples={
  kick:sample(DRUM,'Kicks/Kick%20Acoustic.flac'),
  kickBig:sample(DRUM,'Kicks/Kick%20Acoustic%20Big.flac'),
@@ -220,20 +220,10 @@ function nearestMap(map,note){
 }
 function resolveSample(type,note,velocity=.8){
  const n=Math.round(Number(note)||60);
- if(type==='piano'){
-  const rootNote=Math.max(21,Math.min(108,n)),layer=velocityLayer(velocity,4);
-  return {rootNote,url:pianoUrl(rootNote,layer),oneShot:false};
- }
+ if(type==='piano')return {...nearestMap(pianoMap,n),oneShot:false};
  if(type==='guitar')return electricUrl(n);
- if(type==='acoustic'){
-  const layer=velocityLayer(velocity,3),entry=acousticUrl(n,layer);
-  return {...entry,oneShot:false};
- }
- if(type==='bass'){
-  const nearest=bassRoots.reduce((best,item)=>Math.abs(item[0]-n)<Math.abs(best[0]-n)?item:best,bassRoots[0]);
-  const layer=Number(velocity)<.52?'p':'f';
-  return {rootNote:nearest[0],url:sample(BASS,'big_little_pluck_'+nearest[1]+'_'+layer+'_rr1.wav'),oneShot:false};
- }
+ if(type==='acoustic')return {...nearestMap(acousticMap,n),oneShot:false};
+ if(type==='bass')return {...nearestMap(bassMap,n),oneShot:false};
  if(type==='drum'){const name=drumSamples[drumMap[n]||'snare'];return {rootNote:n,url:name,oneShot:true};}
  if(type==='pad'){const name=drumSamples[padOrder[(n-48+16)%16]];return {rootNote:n,url:name,oneShot:true};}
  return null;
@@ -282,8 +272,8 @@ export function preloadInstrumentSamples(){
   const unique=[...new Set(urls)];
   let cache=null;try{if('caches'in window)cache=await caches.open(SAMPLE_CACHE);}catch{}
   const results=[];
-  for(let i=0;i<unique.length;i+=4){
-   const batch=await Promise.allSettled(unique.slice(i,i+4).map(async url=>{
+  for(let i=0;i<unique.length;i+=6){
+   const batch=await Promise.allSettled(unique.slice(i,i+6).map(async url=>{
     if(cache&&await cache.match(url))return true;
     const response=await fetch(url,{mode:'cors'});if(!response.ok)throw new Error('HTTP '+response.status);
     if(cache)try{await cache.put(url,response.clone());}catch{}
