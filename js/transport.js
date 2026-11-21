@@ -108,7 +108,7 @@ export async function startRecord() {
   let startedTransportHere = false;
   try {
     // Request permission immediately from the Record tap, before other awaits.
-    const micPermission = requestMic();
+    const micPermission = requestMic(track.inputDeviceId || null);
     const audioReady = resume();
     await Promise.all([micPermission, audioReady]);
 
