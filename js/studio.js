@@ -22,6 +22,7 @@ function ensureChannelSettings(track) {
   track.eq ||= { low:0, lowMid:0, mid:0, highMid:0, high:0 };
   track.effects ||= [];
   track.inputGainDb ??= 0;
+  track.inputDeviceId ??= null;
   track.compressor ||= { enabled:false, threshold:-18, ratio:3 };
   track.volume ??= 1;
   track.pan ??= 0;
@@ -56,6 +57,29 @@ export function openChannelEditor(trackId) {
   const close=el('button','btn','✕'); close.type='button'; close.onclick=()=>modal.classList.remove('open');
   head.append(heading,close); panel.append(head);
   const body=el('div','channel-editor-body');
+  const inputBox=el('section','studio-card');inputBox.append(el('h3','','AUDIO INPUT · '+track.name));
+  const inputLabel=el('label','studio-control');inputLabel.append(el('span','studio-control-label','ENTRADA DE GRABACIÓN'));
+  const inputSelect=el('select','studio-select');inputSelect.setAttribute('aria-label','Entrada de audio para esta pista');
+  const defaultOption=el('option','','Micrófono / entrada predeterminada');defaultOption.value='';inputSelect.append(defaultOption);
+  inputSelect.value=track.inputDeviceId||'';
+  inputSelect.addEventListener('change',()=>{track.inputDeviceId=inputSelect.value||null;persist(track);});
+  inputLabel.append(inputSelect);inputBox.append(inputLabel);
+  const inputHelp=el('p','studio-note','Cada pista conserva su propia entrada seleccionada. Si conectas una interfaz USB, actualiza la lista y elige su entrada antes de grabar.');
+  const refreshInputs=el('button','mini-action','↻ ACTUALIZAR ENTRADAS');refreshInputs.type='button';
+  refreshInputs.onclick=async()=>{
+   if(!navigator.mediaDevices?.enumerateDevices){toast('El navegador no permite enumerar entradas');return;}
+   try{
+    const devices=await navigator.mediaDevices.enumerateDevices(),inputs=devices.filter(d=>d.kind==='audioinput'&&d.deviceId);
+    const selected=track.inputDeviceId||'';
+    inputSelect.replaceChildren(defaultOption);
+    inputs.forEach((device,index)=>{const option=el('option','',device.label||('Entrada de audio '+(index+1)));option.value=device.deviceId;inputSelect.append(option);});
+    inputSelect.value=inputs.some(d=>d.deviceId===selected)?selected:'';
+    if(selected&&!inputSelect.value){track.inputDeviceId=null;persist(track);}
+    toast(inputs.length+' entrada(s) disponibles');
+   }catch(error){toast('No se pudieron consultar las entradas');}
+  };
+  inputBox.append(refreshInputs,inputHelp);
+  refreshInputs.click();
   const gainBox=el('section','studio-card'); gainBox.append(el('h3','','INPUT / OUTPUT'));
   gainBox.append(slider('Input gain',-12,12,.5,track.inputGainDb,v=>{track.inputGainDb=v;persist(track);},' dB'));
   gainBox.append(slider('Channel volume',0,150,1,(track.volume??1)*100,v=>{track.volume=v/100;updateChannel(track);},'%'));
@@ -82,7 +106,7 @@ export function openChannelEditor(trackId) {
     row.append(check,title,mix);fxBox.append(row);
   }
   const format=el('p','studio-note','Procesamiento no destructivo durante la reproducción. La grabación original se conserva; los efectos se aplican en la cadena del canal.');
-  body.append(gainBox,eqBox,compBox,fxBox,format); panel.append(body); modal.append(panel); modal.classList.add('open');
+  body.append(inputBox,gainBox,eqBox,compBox,fxBox,format); panel.append(body); modal.append(panel); modal.classList.add('open');
 }
 
 export function renderMixer() {
@@ -115,9 +139,9 @@ const scaleIntervals={
   pentatonic:[0,3,5,7,10], blues:[0,3,5,6,7,10]
 };
 function quantizedNote(index) {
-  if(scaleName==='chromatic')return octave*12+rootNote+index;
+  if(scaleName==='chromatic')return (octave+1)*12+rootNote+index;
   const scale=scaleIntervals[scaleName]; const oct=Math.floor(index/scale.length);
-  return octave*12+rootNote+oct*12+scale[((index%scale.length)+scale.length)%scale.length];
+  return (octave+1)*12+rootNote+oct*12+scale[((index%scale.length)+scale.length)%scale.length];
 }
 function noteOn(key,index,velocity=0.8) {
   if(held.has(key))return;
@@ -140,11 +164,13 @@ function renderInstrumentPanel(host, mode) {
   Object.keys(scaleIntervals).forEach(s=>{const o=el('option','',s.toUpperCase());o.value=s;o.selected=s===scaleName;scaleSel.append(o);});
   scaleSel.onchange=()=>scaleName=scaleSel.value;
   const toneSel=el('select','studio-select');
-  [['piano','PIANO'],['guitar','GUITAR'],['bass','BASS'],['synth','SYNTH PAD']].forEach(([v,l])=>{const o=el('option','',l);o.value=v;o.selected=v===instrumentTone;toneSel.append(o);});
+  [['piano','PIANO'],['guitar','GUITARRA ELÉCTRICA'],['acoustic','GUITARRA ACÚSTICA'],['bass','BAJO'],['synth','SYNTH PAD']].forEach(([v,l])=>{const o=el('option','',l);o.value=v;o.selected=v===instrumentTone;toneSel.append(o);});
   toneSel.onchange=()=>instrumentTone=toneSel.value;
-  const qwerty=el('button','btn'+(qwertyEnabled?' accent':''),qwertyEnabled?'QWERTY ON':'QWERTY OFF');
+  const qwerty=el('button','compact-toggle'+(qwertyEnabled?' active':''),'⌨');
+  qwerty.type='button';qwerty.title=qwertyEnabled?'Desactivar teclado QWERTY':'Activar teclado QWERTY';qwerty.setAttribute('aria-label',qwerty.title);qwerty.setAttribute('aria-pressed',String(qwertyEnabled));
   qwerty.onclick=()=>{qwertyEnabled=!qwertyEnabled;renderInstrumentPanel(host,mode);};
-  const midi=el('button','btn','CONNECT MIDI');midi.onclick=connectMidi;
+  const midi=el('button','compact-toggle'+(midiAccess?' active':''),'MIDI');midi.type='button';midi.title=midiAccess?'Desconectar controlador MIDI':'Conectar controlador MIDI';midi.setAttribute('aria-label',midi.title);midi.setAttribute('aria-pressed',String(!!midiAccess));
+  midi.onclick=async()=>{if(midiAccess){midiAccess.inputs.forEach(input=>input.onmidimessage=null);midiAccess=null;renderInstrumentPanel(host,mode);toast('Controlador MIDI desconectado');}else{await connectMidi();renderInstrumentPanel(host,mode);}};
   bar.append(el('span','instrument-caption','INSTRUMENT'),toneSel,rootSel,scaleSel,qwerty,midi);
   host.append(bar);
   if(selectedMode==='piano'){
@@ -155,7 +181,7 @@ function renderInstrumentPanel(host, mode) {
     octaveBar.append(label,lower,el('span','instrument-caption','OCT '+octave),upper);host.append(octaveBar);
     const keys=el('div','touch-piano');
     for(let i=0;i<24;i++){
-      const note=octave*12+rootNote+i;
+      const note=(octave+1)*12+rootNote+i;
       const pc=(note%12), black=[1,3,6,8,10].includes(pc);
       const key=el('button','piano-key'+(black?' black-key':''),roots[pc]);
       key.setAttribute('aria-label','Nota '+roots[pc]+' octava '+Math.floor(note/12));
@@ -181,7 +207,7 @@ function renderInstrumentPanel(host, mode) {
       p.onpointerup=()=>noteOff('pad'+i);p.onpointercancel=p.onpointerup;p.onpointerleave=p.onpointerup;pads.append(p);
     }
     host.append(pads);
-    if(selectedMode==='drums')host.append(el('p','studio-note','Kit de 16 pads con voces sintetizadas. Para batería acústica realista añadiremos un banco de samples con licencia verificable; no se incluyen MP3 de terceros sin permiso.'));
+    if(selectedMode==='drums')host.append(el('p','studio-note','Kit de 16 pads con grabaciones de batería y percusión CC0. Los sonidos se descargan y guardan en caché para reproducirse después sin conexión.'));
   }
 }
 export function setInstrumentView(target) { activeInstrumentView = target === 'drummachine' ? 'drums' : 'piano'; }
@@ -201,7 +227,7 @@ export async function connectMidi() {
     midiAccess=await navigator.requestMIDIAccess();
     const attach=input=>{input.onmidimessage=ev=>{
       const [status,data1,data2]=ev.data,cmd=status&0xf0;
-      if(cmd===0x90&&data2>0){resume();playInstrumentNote('synth',data1,data2/127);}
+      if(cmd===0x90&&data2>0){resume();playInstrumentNote(instrumentTone,data1,data2/127);}
       else if(cmd===0x80||(cmd===0x90&&data2===0)){stopInstrumentNote(data1);}
       else if(cmd===0xb0){
         const track=findTrack(state.selectedTrackId); if(!track)return;

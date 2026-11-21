@@ -10,9 +10,9 @@ const held = new Map();
 let octave = 4, tone = 'piano', qwerty = false, theme = 'xp';
 let pattern = Array.from({length:10},()=>Array(16).fill(false));
 let patternTimer = null, patternStep = 0, patternBpm = 100, drumStyle = 'CUMBIA', drumPatternInitialized = false;
-let midiCapture = null;
+let midiCapture = null, midiAccess = null;
 const activeCaptureNotes = new Map();
-const tones = [['piano','PIANO'],['guitar','GUITAR'],['bass','BASS'],['synth','SYNTH']];
+const tones = [['piano','PIANO'],['guitar','GUITARRA ELÉCTRICA'],['acoustic','GUITARRA ACÚSTICA'],['bass','BAJO'],['synth','SYNTH']];
 const drumRows = [['KICK',36],['SNARE',38],['CLOSED HAT',42],['OPEN HAT',46],['CLAP',39],['LOW TOM',45],['MID TOM',47],['HIGH TOM',48],['CRASH',49],['RIDE',51]];
 const keyMap = {a:0,w:1,s:2,e:3,d:4,f:5,t:6,g:7,y:8,h:9,u:10,j:11,k:12,o:13,l:14,p:15};
 
@@ -29,16 +29,28 @@ function renderPiano(host){
  instrument.onchange=()=>tone=instrument.value;
  const low=node('button','btn','− OCT');low.onclick=()=>{octave=Math.max(1,octave-1);renderPiano(host);};
  const high=node('button','btn','+ OCT');high.onclick=()=>{octave=Math.min(7,octave+1);renderPiano(host);};
- const q=node('button','btn'+(qwerty?' accent':''),qwerty?'QWERTY ON':'QWERTY OFF');q.onclick=()=>{qwerty=!qwerty;renderPiano(host);};
- const add=node('button','btn accent','+ MIDI TRACK');add.onclick=async()=>{const t=createTrack('midi','MIDI Instrument '+(state.tracks.length+1));state.selectedTrackId=t.id;await saveProject();toast('Pista MIDI creada: '+t.name);};
- const midi=node('button','btn','MIDI IN');midi.onclick=async()=>{if(!navigator.requestMIDIAccess){toast('Web MIDI no disponible en este navegador');return;}try{const access=await navigator.requestMIDIAccess();access.inputs.forEach(input=>input.onmidimessage=e=>{const [s,n,v]=e.data,c=s&240;if(c===144&&v)press(n,'midi:'+n,v/127,'synth');else if(c===128||(c===144&&!v))release('midi:'+n);});toast('MIDI conectado · '+access.inputs.size+' entrada(s)');}catch(e){toast('No se pudo conectar MIDI');}};
- const rec=node('button','btn danger','● REC MIDI');rec.onclick=()=>{if(midiCapture){toast('Ya estás grabando MIDI');return;}let track=state.tracks.find(t=>t.id===state.selectedTrackId&&t.kind==='midi');if(!track)track=createTrack('midi','MIDI Instrument '+(state.tracks.length+1));state.selectedTrackId=track.id;midiCapture={trackId:track.id,started:performance.now(),startSec:Math.max(0,state.playhead),notes:[]};activeCaptureNotes.clear();rec.classList.add('active');toast('Grabación MIDI preparada · toca el teclado');};
- const stopRec=node('button','btn','■ STOP MIDI');stopRec.onclick=async()=>{if(!midiCapture)return toast('No hay grabación MIDI activa');const capture=midiCapture;midiCapture=null;for(const [key,note] of activeCaptureNotes){note.duration=Math.max(.08,(performance.now()-capture.started)/1000-note.time);capture.notes.push(note);}activeCaptureNotes.clear();if(!capture.notes.length){toast('No se grabaron notas');return;}const end=Math.max(...capture.notes.map(n=>n.time+(n.duration||.2)));const clip={id:'midi_'+Date.now().toString(36),kind:'midi',startSec:capture.startSec,lengthSec:Math.max(.25,end),name:'MIDI Performance',instrument:tone,notes:capture.notes};const track=state.tracks.find(t=>t.id===capture.trackId);if(track){track.clips.push(clip);await saveProject();refreshAll();renderMidiEditor();toast('MIDI guardado en '+track.name+' · '+capture.notes.length+' notas');}else toast('No se encontró la pista MIDI');};
- toolbar.append(instrument,node('span','creative-label','OCT '+octave),low,high,q,add,midi,rec,stopRec);host.append(toolbar);
+ const q=node('button','compact-toggle'+(qwerty?' active':''),'⌨');q.type='button';q.title=qwerty?'Desactivar teclado QWERTY':'Activar teclado QWERTY';q.setAttribute('aria-label',q.title);q.setAttribute('aria-pressed',String(qwerty));q.onclick=()=>{qwerty=!qwerty;renderPiano(host);};
+ const midi=node('button','compact-toggle'+(midiAccess?' active':''),'MIDI');midi.type='button';midi.title=midiAccess?'Desconectar controlador MIDI':'Conectar controlador MIDI';midi.setAttribute('aria-pressed',String(!!midiAccess));midi.onclick=async()=>{
+  if(midiAccess){midiAccess.inputs.forEach(input=>input.onmidimessage=null);midiAccess=null;renderPiano(host);toast('Controlador MIDI desconectado');return;}
+  if(!navigator.requestMIDIAccess){toast('Web MIDI no está disponible en este navegador');return;}
+  try{
+   const access=await navigator.requestMIDIAccess();
+   const attach=input=>{input.onmidimessage=e=>{const [status,n,v]=e.data,cmd=status&240;if(cmd===144&&v)press(n,'midi:'+n,v/127,tone);else if(cmd===128||(cmd===144&&!v))release('midi:'+n);};};
+   access.inputs.forEach(attach);access.onstatechange=()=>access.inputs.forEach(attach);midiAccess=access;renderPiano(host);
+   toast('MIDI conectado · '+access.inputs.size+' entrada(s)');
+  }catch(e){toast('No se pudo conectar MIDI');}
+ };
+ const rec=node('button','compact-toggle record-mini','●');rec.type='button';rec.title='Grabar interpretación MIDI';rec.setAttribute('aria-label',rec.title);
+ rec.onclick=()=>{if(midiCapture){toast('Ya estás grabando MIDI');return;}let track=state.tracks.find(t=>t.id===state.selectedTrackId&&t.kind==='midi');if(!track)track=createTrack('midi','MIDI Instrument '+(state.tracks.length+1));state.selectedTrackId=track.id;midiCapture={trackId:track.id,started:performance.now(),startSec:Math.max(0,state.playhead),notes:[]};activeCaptureNotes.clear();rec.classList.add('active');rec.title='Grabando MIDI';toast('Grabación MIDI preparada · toca el teclado');};
+ const stopRec=node('button','compact-toggle','■');stopRec.type='button';stopRec.title='Detener grabación MIDI';stopRec.setAttribute('aria-label',stopRec.title);
+ stopRec.onclick=async()=>{if(!midiCapture)return toast('No hay grabación MIDI activa');const capture=midiCapture;midiCapture=null;for(const [key,note] of activeCaptureNotes){note.duration=Math.max(.08,(performance.now()-capture.started)/1000-note.time);capture.notes.push(note);}activeCaptureNotes.clear();if(!capture.notes.length){toast('No se grabaron notas');return;}const end=Math.max(...capture.notes.map(n=>n.time+(n.duration||.2)));const clip={id:'midi_'+Date.now().toString(36),kind:'midi',startSec:capture.startSec,lengthSec:Math.max(.25,end),name:'MIDI Performance',instrument:tone,notes:capture.notes};const track=state.tracks.find(t=>t.id===capture.trackId);if(track){track.clips.push(clip);await saveProject();refreshAll();renderMidiEditor();rec.classList.remove('active');rec.title='Grabar interpretación MIDI';toast('MIDI guardado en '+track.name+' · '+capture.notes.length+' notas');}else toast('No se encontró la pista MIDI');};
+ const advanced=node('details','compact-options');const summary=node('summary','compact-options-summary','⋯');summary.title='Más opciones';advanced.append(summary);
+ const add=node('button','mini-action','＋ PISTA MIDI');add.type='button';add.onclick=async()=>{const t=createTrack('midi','MIDI Instrument '+(state.tracks.length+1));state.selectedTrackId=t.id;await saveProject();refreshAll();toast('Pista MIDI creada: '+t.name);};advanced.append(add);
+ toolbar.append(instrument,node('span','creative-label','OCT '+octave),low,high,q,midi,rec,stopRec,advanced);host.append(toolbar);
  const keyboard=node('div','piano-keyboard');
  const whites=14, whiteWidth=100/whites;
  for(let i=0;i<whites;i++){
-  const semis=[0,2,4,5,7,9,11][i%7], note=octave*12+Math.floor(i/7)*12+semis;
+  const semis=[0,2,4,5,7,9,11][i%7], note=(octave+1)*12+Math.floor(i/7)*12+semis;
   const key=node('button','piano-white',noteName(note));key.style.left=(i*whiteWidth)+'%';key.style.width=whiteWidth+'%';
   key.onpointerdown=e=>{e.preventDefault();key.setPointerCapture?.(e.pointerId);key.classList.add('pressed');press(note,'piano:'+i);};
   const off=()=>{key.classList.remove('pressed');release('piano:'+i);};key.onpointerup=off;key.onpointercancel=off;key.onlostpointercapture=off;keyboard.append(key);
@@ -46,12 +58,12 @@ function renderPiano(host){
  // Black keys positioned between the appropriate white keys, as on a conventional piano.
  const blackAfter=[0,1,3,4,5];let whiteBefore=0;
  for(let oct=0;oct<2;oct++)for(const sem of blackAfter){
-  const idx=oct*7+sem;const note=octave*12+oct*12+[1,3,6,8,10][blackAfter.indexOf(sem)];
+  const idx=oct*7+sem;const note=(octave+1)*12+oct*12+[1,3,6,8,10][blackAfter.indexOf(sem)];
   const key=node('button','piano-black',noteName(note));key.style.left=((idx+1)*whiteWidth-whiteWidth*.31)+'%';key.style.width=(whiteWidth*.62)+'%';
   const id='black:'+oct+':'+sem;key.onpointerdown=e=>{e.preventDefault();key.setPointerCapture?.(e.pointerId);key.classList.add('pressed');press(note,id);};const off=()=>{key.classList.remove('pressed');release(id);};key.onpointerup=off;key.onpointercancel=off;key.onlostpointercapture=off;keyboard.append(key);
  }
  host.append(keyboard);
- const legend=node('div','creative-footnote','Piano táctil · 2 octavas · polifonía · MIDI externo compatible cuando el navegador lo permite');host.append(legend);
+ const legend=node('div','creative-footnote','Piano y guitarras con muestras grabadas · 2 octavas · polifonía · banco CC0');host.append(legend);
  if(qwerty){const hint=node('p','studio-note','QWERTY opcional: A W S E D F T G Y H U J K O L P.');host.append(hint);}
 }
 function renderMidiEditor(){
@@ -94,7 +106,7 @@ function renderDrums(host){
  const importLabel=node('label','btn','IMPORTAR SAMPLES WAV / MP3');importLabel.htmlFor='sample-file';host.append(importLabel);
 }
 function renderThemes(){
- const themes=[['xp','Windows 11 · Soft Blue'],['classic','Classic Studio'],['dark','Studio Dark'],['winamp','Winamp Retro'],['analog','Analog 80s'],['modern','Modern Studio'],['fl','Color Beat'],['minimal','Media Minimal'],['cyber','Cyber Neon'],['metal','Industrial Metal']];
+ const themes=[['xp','Windows 11 · Fluent'],['classic','Classic Studio'],['dark','Studio Dark'],['winamp','Winamp Retro'],['analog','Analog 80s'],['modern','Modern Studio'],['fl','Color Beat'],['minimal','Media Minimal'],['cyber','Cyber Neon'],['metal','Industrial Metal']];
  const box=node('div','theme-picker');const label=node('strong','','TEMA');const select=node('select','studio-select');select.setAttribute('aria-label','Paleta de colores');
  themes.forEach(([v,l])=>{const o=node('option','',l);o.value=v;select.append(o);});select.value=theme;
  select.onchange=()=>{theme=select.value;document.documentElement.dataset.theme=theme;localStorage.setItem('musictool-theme',theme);};
@@ -103,9 +115,9 @@ function renderThemes(){
 export function mountCreative(){
  const piano=$('view-pianoroll');if(piano){piano.replaceChildren();const wrap=node('section','creative-view piano-view');wrap.append(node('h2','creative-heading','PIANO / VIRTUAL INSTRUMENT'));const host=node('div','creative-instrument');wrap.append(host);const editor=node('div','midi-editor-panel');editor.id='midi-note-editor';wrap.append(editor);piano.append(wrap);renderPiano(host);renderMidiEditor();}
  const drums=$('view-drummachine');if(drums){drums.replaceChildren();const wrap=node('section','creative-view');wrap.append(node('h2','creative-heading','DRUM STUDIO / STEP SEQUENCER'));const host=node('div','creative-instrument');wrap.append(host);drums.append(wrap);renderDrums(host);}
- const menu=$('btn-menu');if(menu&&!$('theme-picker')){const picker=renderThemes();picker.id='theme-picker';document.getElementById('topbar').append(picker);}
+ const menu=$('btn-menu');if(menu&&!$('theme-picker')){const picker=renderThemes();picker.id='theme-picker';document.querySelector('.top-actions').append(picker);}
  theme=localStorage.getItem('musictool-theme')||'xp';document.documentElement.dataset.theme=theme;const sel=$('theme-picker')?.querySelector('select');if(sel)sel.value=theme;
- window.addEventListener('keydown',e=>{if(!qwerty||!$('view-pianoroll')?.classList.contains('active')||e.repeat||/INPUT|SELECT|TEXTAREA/.test(e.target?.tagName||''))return;const k=e.key.toLowerCase();if(keyMap[k]!==undefined){e.preventDefault();press(octave*12+keyMap[k],'qwerty:'+k);}});
+ window.addEventListener('keydown',e=>{if(!qwerty||!$('view-pianoroll')?.classList.contains('active')||e.repeat||/INPUT|SELECT|TEXTAREA/.test(e.target?.tagName||''))return;const k=e.key.toLowerCase();if(keyMap[k]!==undefined){e.preventDefault();press((octave+1)*12+keyMap[k],'qwerty:'+k);}});
  window.addEventListener('keyup',e=>release('qwerty:'+e.key.toLowerCase()));
  window.addEventListener('blur',()=>{for(const k of held.keys())release(k);});
 }

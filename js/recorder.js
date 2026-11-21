@@ -10,17 +10,23 @@ let workletNode = null;
 let scriptNode = null;
 let monitorGain = null;
 let captureGain = null;
+let workletSilent = null;
 let chunks = [];
 let recording = false;
 let acceptingChunks = false;
 let workletStopResolver = null;
 let sampleRate = 48000;
+let activeDeviceId = null;
 
 const WORKLET_URL = new URL('./worklets/recorder-processor.js', import.meta.url);
 let workletReady = false;
 
-export async function requestMic() {
-  if (stream) return stream;
+export async function requestMic(deviceId = null) {
+  if (stream && (deviceId || null) === activeDeviceId) return stream;
+  if (stream && (deviceId || null) !== activeDeviceId) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+  }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     throw new Error('getUserMedia not supported on this browser');
   }
@@ -30,19 +36,21 @@ export async function requestMic() {
       noiseSuppression: false,
       autoGainControl: false,
       channelCount: 1,
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
     },
     video: false,
   });
+  activeDeviceId = deviceId || null;
   return stream;
 }
 
 export function hasMic() { return !!stream; }
 export function getStream() { return stream; }
 
-export async function startRecording({ monitor = true, inputGainDb = 0 } = {}) {
+export async function startRecording({ monitor = true, inputGainDb = 0, inputDeviceId = null } = {}) {
   const ctx = getContext();
   await ctx.resume();
-  await requestMic();
+  await requestMic(inputDeviceId);
   sampleRate = ctx.sampleRate;
   chunks = [];
   recording = true;
@@ -68,7 +76,11 @@ export async function startRecording({ monitor = true, inputGainDb = 0 } = {}) {
         await ctx.audioWorklet.addModule(WORKLET_URL);
         workletReady = true;
       }
-      workletNode = new AudioWorkletNode(ctx, 'recorder-processor', { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1 });
+      workletNode = new AudioWorkletNode(ctx, 'recorder-processor', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1], channelCount: 1 });
+      workletSilent = ctx.createGain();
+      workletSilent.gain.value = 0;
+      workletNode.connect(workletSilent);
+      workletSilent.connect(ctx.destination);
       workletNode.port.onmessage = (e) => {
         if (e.data instanceof Float32Array && acceptingChunks) chunks.push(e.data);
         if (e.data && e.data.type === 'stopped' && workletStopResolver) workletStopResolver();
@@ -112,6 +124,7 @@ export async function stopRecording() {
     acceptingChunks = false;
     try { workletNode.disconnect(); } catch {}
     workletNode = null;
+    if (workletSilent) { try { workletSilent.disconnect(); } catch {} workletSilent = null; }
   }
   acceptingChunks = false;
   if (scriptNode) {

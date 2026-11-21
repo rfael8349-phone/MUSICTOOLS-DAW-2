@@ -4,11 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
 <meta name="theme-color" content="#eaf0f8" />
-<title>MUSICTOOL DAW V7.1.1</title>
-<link rel="manifest" href="manifest.webmanifest?v=7.1.1" />
+<title>MUSICTOOL DAW V7.2.0</title>
+<link rel="manifest" href="manifest.webmanifest?v=7.2.0" />
 <link rel="icon" href="assets/mascot.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="css/theme.css?v=7.1.1" />
-<link rel="stylesheet" href="css/main.css?v=7.1.1" />
+<link rel="stylesheet" href="css/theme.css?v=7.2.0" />
+<link rel="stylesheet" href="css/main.css?v=7.2.0" />
 </head>
 <body>
 <div id="app">
@@ -19,7 +19,7 @@
       <img src="assets/mascot.svg" alt="" class="brand-mascot" />
       <div class="brand-text">
         <span class="brand-title">MUSICTOOL</span>
-        <span class="brand-sub">DAW · V7.1.1</span>
+        <span class="brand-sub">DAW · V7.2.0</span>
       </div>
     </div>
 
@@ -55,10 +55,16 @@
           Zoom
           <input type="range" id="playlist-zoom" min="40" max="200" value="80" />
         </label>
-        <button class="btn" id="btn-snap" data-on="1" title="Snap to grid">▦</button>
-        <button class="btn" id="btn-undo" title="Undo">↶</button>
-        <button class="btn" id="btn-redo" title="Redo">↷</button>
-        <div class="beat-status" aria-label="Indicador visual de pulso"><span id="beat-indicator" aria-label="Pulso"></span><small>PULSO</small></div>
+        <details class="toolbar-more">
+          <summary class="compact-toggle" title="Más opciones de edición" aria-label="Más opciones">⋯</summary>
+          <div class="toolbar-more-menu">
+            <button class="compact-toggle" id="btn-snap" data-on="1" title="Ajustar a la cuadrícula" aria-label="Snap">▦</button>
+            <button class="compact-toggle" id="btn-undo" title="Deshacer" aria-label="Deshacer">↶</button>
+            <button class="compact-toggle" id="btn-redo" title="Rehacer" aria-label="Rehacer">↷</button>
+            <button class="compact-toggle lightbar-toggle" id="btn-lightbar" type="button" title="Mostrar u ocultar Lighty Bar" aria-label="Lighty Bar" aria-pressed="true">✦</button>
+            <div class="beat-status" aria-label="Indicador visual de pulso"><span id="beat-indicator" aria-label="Pulso"></span><small>PULSO</small></div>
+          </div>
+        </details>
       </div>
 
       <div class="playlist-body">
@@ -143,6 +149,6 @@
 
 </div>
 
-<script type="module" src="js/app.js?v=7.1.1"></script>
+<script type="module" src="js/app.js?v=7.2.0"></script>
 </body>
 </html>

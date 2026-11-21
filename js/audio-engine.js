@@ -2,7 +2,7 @@
 import { state, isAudible } from './state.js';
 let ctx=null,master=null,metronomeGain=null,clickBuffer=null;
 let activeSources=[];
-const channels=new Map(),voices=new Map();
+const channels=new Map();
 export function getContext(){
  if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;ctx=new AC({latencyHint:'interactive'});master=ctx.createGain();master.gain.value=Number.isFinite(state.masterVolume)?state.masterVolume:.9;master.connect(ctx.destination);metronomeGain=ctx.createGain();metronomeGain.gain.value=.5;metronomeGain.connect(master);clickBuffer=makeClickBuffer(ctx);for(const t of state.tracks)ensureChannel(t.id);}
  return ctx;
@@ -77,7 +77,28 @@ export function getChannelLevel(trackId){const ch=channels.get(trackId);if(!ch)r
 export function removeChannel(trackId){const ch=channels.get(trackId);if(ch){for(const n of [ch.gain,...ch.filters,ch.compressor,ch.panner,ch.analyser,...ch.fxNodes])if(n)try{n.disconnect();}catch{}channels.delete(trackId);}}
 export function playClick(when,accent=false){getContext();const src=ctx.createBufferSource();src.buffer=clickBuffer;const g=ctx.createGain();g.gain.value=accent?1:.6;src.connect(g);g.connect(metronomeGain);src.start(when);}
 function makeClickBuffer(c){const dur=.05,sr=c.sampleRate,b=c.createBuffer(1,Math.floor(sr*dur),sr),d=b.getChannelData(0);for(let i=0;i<d.length;i++){const t=i/sr;d[i]=Math.sin(2*Math.PI*1000*t)*Math.exp(-t*60);}return b;}
-export function schedulePlayback(fromSec,windowSec=30){getContext();stopAll();const t0=ctx.currentTime+.05;for(const track of state.tracks){if(!isAudible(track))continue;const ch=ensureChannel(track.id);updateChannel(track);for(const clip of track.clips){if(clip.startSec+clip.lengthSec<=fromSec||clip.startSec>=fromSec+windowSec)continue;scheduleClip(track,clip,ch,fromSec,t0);}}}
+export async function schedulePlayback(fromSec,windowSec=30,isCurrent=()=>true){
+ getContext();stopAll();
+ const audible=state.tracks.filter(track=>isAudible(track));
+ // Decode all MIDI voices before scheduling so notes stay locked to the transport clock.
+ const loads=[];
+ for(const track of audible)for(const clip of track.clips||[]){
+  if(clip.kind==='midi'&&Array.isArray(clip.notes)){
+   const type=clip.instrument||'piano';
+   for(const note of clip.notes)loads.push(loadInstrumentVoice(type,Number(note.pitch)||60,Number(note.velocity)||.8));
+  }
+ }
+ await Promise.allSettled(loads);
+ if(!isCurrent())return;
+ const t0=ctx.currentTime+.06;
+ for(const track of audible){
+  const ch=ensureChannel(track.id);updateChannel(track);
+  for(const clip of track.clips||[]){
+   if(clip.startSec+clip.lengthSec<=fromSec||clip.startSec>=fromSec+windowSec)continue;
+   scheduleClip(track,clip,ch,fromSec,t0);
+  }
+ }
+}
 function scheduleClip(track,clip,ch,fromSec,t0){
  if(clip.kind==='midi'&&Array.isArray(clip.notes)){
   const clipStart=t0+Math.max(0,clip.startSec-fromSec),clipOffset=Math.max(0,fromSec-clip.startSec);
@@ -85,9 +106,10 @@ function scheduleClip(track,clip,ch,fromSec,t0){
    const relative=Number(note.time)||0,duration=Math.max(.04,Number(note.duration)||.2);
    if(relative+duration<=clipOffset)continue;
    const when=clipStart+Math.max(0,relative-clipOffset),remaining=Math.max(.04,duration-Math.max(0,clipOffset-relative));
+   const type=clip.instrument||'piano',velocity=Math.max(.03,Math.min(1,Number(note.velocity)||.8)),voice=getCachedInstrumentVoice(type,Number(note.pitch)||60,velocity);
+   if(!voice)continue;
    const source=ctx.createBufferSource(),gain=ctx.createGain();
-   source.buffer=getVoiceBuffer(clip.instrument||'piano',Number(note.pitch)||60);
-   const velocity=Math.max(.03,Math.min(1,Number(note.velocity)||.8));
+   source.buffer=voice.buffer;source.playbackRate.value=voice.rate;
    const noteEnd=when+Math.max(.16,remaining);
    gain.gain.setValueAtTime(.0001,when);gain.gain.linearRampToValueAtTime(velocity*.72,when+.012);
    gain.gain.setValueAtTime(velocity*.72,Math.max(when+.025,noteEnd-.045));gain.gain.linearRampToValueAtTime(.0001,noteEnd);
@@ -109,76 +131,193 @@ export async function decodeAudio(arrayBuffer){getContext();return await ctx.dec
 export function computePeaks(buffer,buckets=200){const data=buffer.getChannelData(0),per=Math.floor(data.length/buckets)||1,peaks=new Float32Array(buckets);for(let i=0;i<buckets;i++){let max=0;for(let j=i*per;j<Math.min((i+1)*per,data.length);j++)max=Math.max(max,Math.abs(data[j]));peaks[i]=max;}return peaks;}
 export function nowSec(){getContext();return ctx.currentTime;}
 
-// MUSICTOOL instrument engine: synthesized acoustic-style sample models.
-const instrumentBuffers=new Map();
-function getVoiceBuffer(type,note){
- const id=String(type)+':'+String(note);
- if(instrumentBuffers.has(id))return instrumentBuffers.get(id);
- const sr=ctx.sampleRate,frequency=440*Math.pow(2,(Number(note)-69)/12);
- let buffer;
- if(type==='drum'){
-  const length=Math.floor(sr*.72);buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
-  const hats=[42,46,49,51,52,55,57],snare=[38,39,40],kick=[35,36];
-  const tomFreq={45:115,47:145,48:175,50:205,43:95};
-  let prev=0;
-  for(let i=0;i<length;i++){
-   const t=i/sr,noise=Math.random()*2-1;let v=0;
-   if(kick.includes(Number(note))){const f=42+105*Math.exp(-t*19);v=Math.sin(2*Math.PI*f*t)*Math.exp(-t*8)+noise*Math.exp(-t*95)*.12;}
-   else if(snare.includes(Number(note))){const hp=noise-prev*.88;prev=noise;v=(hp*.72+Math.sin(2*Math.PI*185*t)*.28)*Math.exp(-t*19);}
-   else if(hats.includes(Number(note))){const hp=noise-prev*.94;prev=noise;v=hp*Math.exp(-t*(note===46?13:38))*.55;}
-   else {const f=(tomFreq[note]||155)*(1-.42*Math.min(1,t/.24));v=Math.sin(2*Math.PI*f*t)*Math.exp(-t*8)+noise*Math.exp(-t*45)*.06;}
-   data[i]=v*.72;
-  }
- }else if(type==='piano'){
-  // Deterministic multi-partial piano model: hammer transient, inharmonic
-  // upper partials and independent decay rates (no white-noise oscillator).
-  const length=Math.floor(sr*3.0);buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
-  const partials=[1,.52,.27,.15,.09,.055,.033,.02],decays=[1.65,2.25,3.1,4.0,4.9,5.8,6.8,7.8];
-  const detune=frequency<180?.0018:.0008;
-  for(let i=0;i<length;i++){
-   const t=i/sr;let v=0;
-   for(let h=0;h<partials.length;h++){
-    const order=h+1,inharmonic=Math.sqrt(1+.00016*order*order);
-    const f=frequency*order*inharmonic;
-    const stringA=Math.sin(2*Math.PI*f*t),stringB=Math.sin(2*Math.PI*f*(1+detune)*t);
-    v+=partials[h]*((stringA+stringB)*.5)*Math.exp(-decays[h]*t);
-   }
-   const hammer=(Math.sin(2*Math.PI*frequency*8.4*t)*Math.exp(-t*105)*.035);
-   const attack=Math.min(1,t*sr/18);
-   data[i]=(v*attack+hammer)*.43;
-  }
- }else if(type==='guitar'||type==='bass'){
-  // Plucked-string tone with harmonic decay and a short pick transient.
-  const length=Math.floor(sr*(type==='bass'?2.6:2.8));buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
-  const partials=type==='bass'?[1,.42,.2,.09,.035]:[1,.62,.36,.2,.11,.055,.025];
-  const decay=type==='bass'?.78:1.25;
-  for(let i=0;i<length;i++){
-   const t=i/sr;let v=0;
-   for(let h=0;h<partials.length;h++){
-    const n=h+1;const f=frequency*n;
-    v+=partials[h]*Math.sin(2*Math.PI*f*t)*Math.exp(-decay*t*(1+.24*h));
-   }
-   const pick=Math.sin(2*Math.PI*frequency*5.8*t)*Math.exp(-t*85)*.055;
-   data[i]=(v+pick)*Math.min(1,t*sr/12)*(type==='bass'?.32:.24);
-  }
- }else if(type==='pad'){
-  const length=Math.floor(sr*2.1);buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
-  for(let i=0;i<length;i++){const t=i/sr;const env=Math.min(1,t*5)*Math.exp(-t*.9);data[i]=(Math.sin(2*Math.PI*frequency*t)+.28*Math.sin(4*Math.PI*frequency*t)+.12*Math.sin(6*Math.PI*frequency*t))*env*.22;}
- }else{
-  const length=Math.floor(sr*1.8);buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
-  for(let i=0;i<length;i++){const t=i/sr;const env=Math.exp(-t*1.8);data[i]=(Math.sin(2*Math.PI*frequency*t)+.2*Math.sin(4*Math.PI*frequency*t)+.08*Math.sin(6*Math.PI*frequency*t))*env*.28;}
+// MUSICTOOL sampled instrument engine — CC0 recordings, cached for offline use.
+const instrumentBuffers=new Map(),instrumentLoads=new Map(),voices=new Map(),pendingVoices=new Map();
+let samplePreloadPromise=null;
+const SAMPLE_CACHE='musicttool-instrument-bank-v72';
+const META='https://raw.githubusercontent.com/facebookincubator/Meta-open-sound/main/systems/instruments/';
+const BASS='https://raw.githubusercontent.com/sfzinstruments/karoryfer.big-little-bass/main/Samples/';
+const DRUM='https://raw.githubusercontent.com/august-byrne/phazite-sounds/main/pack/Drums/';
+const sample=(base,path)=>base+path;
+const pianoNotes=['C','Cs','D','Ds','E','F','Fs','G','Gs','A','As','B'];
+function sampleNoteName(note){return pianoNotes[((note%12)+12)%12]+(Math.floor(note/12)-1);}
+function pianoUrl(note,layer=3){return sample(META,'meta-piano/ogg/INSPiano_Vel0'+layer+'_'+sampleNoteName(note)+'_01.ogg');}
+function velocityLayer(velocity,layers=4){
+ const v=Math.max(0,Math.min(1,Number(velocity)||.8));
+ if(layers===4)return v<.25?1:v<.5?2:v<.88?3:4;
+ return v<.35?1:v<.72?2:3;
+}
+const pianoMap=Array.from({length:25},(_,i)=>{const note=48+i;return [note,pianoUrl(note,3)];});
+const acousticZones=[
+ {root:40,max:60,id:'StringLowE'},{root:45,max:65,id:'StringA'},
+ {root:50,max:70,id:'StringD'},{root:55,max:75,id:'StringG'},
+ {root:59,max:79,id:'StringB'},{root:64,max:84,id:'StringHighE'}
+];
+function acousticUrl(note,layer=3){
+ const n=Math.max(40,Math.min(84,Math.round(note)));
+ const zones=acousticZones.filter(z=>n>=z.root&&n<=z.max);
+ const zone=zones.sort((a,b)=>Math.abs(n-a.root)-Math.abs(n-b.root))[0]||acousticZones.reduce((best,z)=>Math.abs(n-z.root)<Math.abs(n-best.root)?z:best,acousticZones[0]);
+ return {rootNote:n,url:sample(META,'meta-steel-guitar/ogg/INSGuitarSteel_'+zone.id+'_Vel0'+layer+'_'+sampleNoteName(n)+'_01.ogg')};
+}
+const acousticMap=[40,45,50,55,60,64,67,72,79].map(note=>[note,acousticUrl(note,3).url]);
+const electricZones=[
+ {low:35,high:38,root:36,file:'C2_s1_01.flac'},
+ {low:39,high:42,root:41,file:'F2_s1_01.flac'},
+ {low:43,high:46,root:45,file:'A2_s2_01.flac'},
+ {low:47,high:49,root:48,file:'C3_s2_02.flac'},
+ {low:50,high:53,root:52,file:'E3_s3_01.flac'},
+ {low:54,high:56,root:55,file:'G3_s4_01.flac'},
+ {low:57,high:61,root:59,file:'B3_s5_01.flac'},
+ {low:62,high:65,root:64,file:'E4_s6_01.flac'},
+ {low:66,high:69,root:67,file:'G4_s6_01.flac'},
+ {low:70,high:72,root:71,file:'B4_s6_01.flac'},
+ {low:73,high:76,root:74,file:'D5_s6_01.flac'},
+ {low:77,high:82,root:80,file:'G%235_s6_03.flac'},
+ {low:83,high:86,root:85,file:'C%236_s6_01.flac'}
+];
+const ELECTRIC='https://raw.githubusercontent.com/freepats/electric-guitar-FSBS-clean/main/samples/bridge/small/';
+function electricUrl(note){
+ const n=Math.max(35,Math.min(86,Math.round(note)));
+ const zone=electricZones.find(z=>n>=z.low&&n<=z.high)||electricZones.reduce((best,z)=>Math.abs(n-z.root)<Math.abs(n-best.root)?z:best,electricZones[0]);
+ return {rootNote:zone.root,url:sample(ELECTRIC,zone.file),oneShot:false};
+}
+const guitarMap=electricZones.map(z=>[z.root,sample(ELECTRIC,z.file)]);
+const bassRoots=[
+ [35,'b1'],[36,'c2'],[38,'d2'],[40,'e2'],[41,'f2'],[43,'g2'],[45,'a2'],[47,'b2'],
+ [48,'c3'],[50,'d3'],[52,'e3'],[53,'f3'],[55,'g3'],[57,'a3'],[59,'b3'],[60,'c4'],
+ [62,'d4'],[64,'e4'],[65,'f4'],[67,'g4'],[69,'a4'],[71,'b4'],[72,'c5']
+];
+const bassMap=[40,45,50,55].map(note=>{const root=bassRoots.find(x=>x[0]===note);return [note,sample(BASS,'big_little_pluck_'+root[1]+'_f_rr1.wav')];});
+const drumSamples={
+ kick:sample(DRUM,'Kicks/Kick%20Acoustic.flac'),
+ kickBig:sample(DRUM,'Kicks/Kick%20Acoustic%20Big.flac'),
+ rim:sample(DRUM,'Snares/Rim%20Side%20Stick.flac'),
+ snare:sample(DRUM,'Snares/Snare%20Acoustic.flac'),
+ snareRim:sample(DRUM,'Snares/Snare%20Rimshot.flac'),
+ snareTight:sample(DRUM,'Snares/Snare%20Tight.flac'),
+ hat:sample(DRUM,'Hats/Hat%20Closed%20Acoustic.flac'),
+ hatOpen:sample(DRUM,'Hats/Hat%20Open%20Acoustic.flac'),
+ hatPedal:sample(DRUM,'Hats/Hat%20Pedal.flac'),
+ clap:sample(DRUM,'Claps/Clap%20Studio.flac'),
+ tomFloor:sample(DRUM,'Toms/Tom%20Floor.flac'),
+ tomLow:sample(DRUM,'Toms/Tom%20Low.flac'),
+ tomHigh:sample(DRUM,'Toms/Tom%20High.flac'),
+ crash:sample(DRUM,'Cymbals/Crash.flac'),
+ ride:sample(DRUM,'Cymbals/Ride.flac'),
+ rideBell:sample(DRUM,'Cymbals/Ride%20Bell.flac'),
+ tambourine:sample(DRUM,'Percussion/Tambourine.flac'),
+};
+const drumMap={
+ 35:'kick',36:'kickBig',37:'rim',38:'snare',39:'clap',40:'snareRim',41:'tomFloor',
+ 42:'hat',43:'kick',44:'hatPedal',45:'tomFloor',46:'hatOpen',47:'tomLow',48:'tomHigh',
+ 49:'crash',50:'tomHigh',51:'ride',52:'crash',53:'rideBell',54:'tambourine',55:'rideBell',
+ 56:'rideBell',57:'crash'
+};
+const padOrder=['kickBig','snare','clap','hat','hatOpen','tomFloor','tomLow','tomHigh','crash','ride','rim','kick','snareRim','snareTight','hatPedal','rideBell'];
+function nearestMap(map,note){
+ let best=map[0];for(const entry of map)if(Math.abs(entry[0]-note)<Math.abs(best[0]-note))best=entry;
+ return {rootNote:best[0],url:best[1]};
+}
+function resolveSample(type,note,velocity=.8){
+ const n=Math.round(Number(note)||60);
+ if(type==='piano'){
+  const rootNote=Math.max(21,Math.min(108,n)),layer=velocityLayer(velocity,4);
+  return {rootNote,url:pianoUrl(rootNote,layer),oneShot:false};
  }
- instrumentBuffers.set(id,buffer);
- return buffer;
+ if(type==='guitar')return electricUrl(n);
+ if(type==='acoustic'){
+  const layer=velocityLayer(velocity,3),entry=acousticUrl(n,layer);
+  return {...entry,oneShot:false};
+ }
+ if(type==='bass'){
+  const nearest=bassRoots.reduce((best,item)=>Math.abs(item[0]-n)<Math.abs(best[0]-n)?item:best,bassRoots[0]);
+  const layer=Number(velocity)<.52?'p':'f';
+  return {rootNote:nearest[0],url:sample(BASS,'big_little_pluck_'+nearest[1]+'_'+layer+'_rr1.wav'),oneShot:false};
+ }
+ if(type==='drum'){const name=drumSamples[drumMap[n]||'snare'];return {rootNote:n,url:name,oneShot:true};}
+ if(type==='pad'){const name=drumSamples[padOrder[(n-48+16)%16]];return {rootNote:n,url:name,oneShot:true};}
+ return null;
+}
+async function getCachedResponse(url){
+ let cache=null;try{if('caches'in window)cache=await caches.open(SAMPLE_CACHE);}catch{}
+ let response=cache?await cache.match(url):null;
+ if(!response){
+  response=await fetch(url,{mode:'cors'});
+  if(!response.ok)throw new Error('Sample download failed: '+response.status);
+  if(cache)try{await cache.put(url,response.clone());}catch{}
+ }
+ return response;
+}
+async function loadInstrumentVoice(type,note,velocity=.8){
+ if(type==='synth')return {buffer:makeSynthBuffer(note),rootNote:Number(note),rate:1,oneShot:false};
+ const def=resolveSample(type,Number(note),velocity);if(!def?.url)throw new Error('No sample mapped for '+type);
+ if(instrumentBuffers.has(def.url))return {...def,buffer:instrumentBuffers.get(def.url),rate:Math.pow(2,(Number(note)-def.rootNote)/12)};
+ if(instrumentLoads.has(def.url)){
+  const buffer=await instrumentLoads.get(def.url);return {...def,buffer,rate:Math.pow(2,(Number(note)-def.rootNote)/12)};
+ }
+ const task=(async()=>{
+  const response=await getCachedResponse(def.url),bytes=await response.arrayBuffer();
+  const buffer=await getContext().decodeAudioData(bytes.slice(0));instrumentBuffers.set(def.url,buffer);return buffer;
+ })();
+ instrumentLoads.set(def.url,task);
+ try{const buffer=await task;return {...def,buffer,rate:Math.pow(2,(Number(note)-def.rootNote)/12)};}
+ finally{instrumentLoads.delete(def.url);}
+}
+function getCachedInstrumentVoice(type,note,velocity=.8){
+ if(type==='synth')return {buffer:makeSynthBuffer(note),rate:1,oneShot:false};
+ const def=resolveSample(type,Number(note),velocity);if(!def||!instrumentBuffers.has(def.url))return null;
+ return {...def,buffer:instrumentBuffers.get(def.url),rate:Math.pow(2,(Number(note)-def.rootNote)/12)};
+}
+function makeSynthBuffer(note){
+ const key='synth:'+note;if(instrumentBuffers.has(key))return instrumentBuffers.get(key);
+ const frequency=440*Math.pow(2,(Number(note)-69)/12),sr=ctx.sampleRate,length=Math.floor(sr*1.8);
+ const buffer=ctx.createBuffer(1,length,sr),data=buffer.getChannelData(0);
+ for(let i=0;i<length;i++){const t=i/sr,env=Math.min(1,t*9)*Math.exp(-t*1.65);data[i]=(Math.sin(2*Math.PI*frequency*t)+.24*Math.sin(4*Math.PI*frequency*t)+.1*Math.sin(6*Math.PI*frequency*t))*env*.24;}
+ instrumentBuffers.set(key,buffer);return buffer;
+}
+export function preloadInstrumentSamples(){
+ if(samplePreloadPromise)return samplePreloadPromise;
+ samplePreloadPromise=(async()=>{
+  const urls=[...pianoMap,...guitarMap,...acousticMap,...bassMap].map(x=>x[1]).concat(Object.values(drumSamples));
+  const unique=[...new Set(urls)];
+  let cache=null;try{if('caches'in window)cache=await caches.open(SAMPLE_CACHE);}catch{}
+  const results=[];
+  for(let i=0;i<unique.length;i+=4){
+   const batch=await Promise.allSettled(unique.slice(i,i+4).map(async url=>{
+    if(cache&&await cache.match(url))return true;
+    const response=await fetch(url,{mode:'cors'});if(!response.ok)throw new Error('HTTP '+response.status);
+    if(cache)try{await cache.put(url,response.clone());}catch{}
+    return true;
+   }));
+   results.push(...batch);
+  }
+  const ready=results.filter(x=>x.status==='fulfilled').length;
+  console.info('MUSICTOOL CC0 sample bank:',ready+'/'+unique.length,'files ready for playback');
+  return {ready,total:unique.length};
+ })().catch(error=>{samplePreloadPromise=null;console.warn('Sample bank preload failed:',error);return {ready:0,total:0,error};});
+ return samplePreloadPromise;
 }
 export function playInstrumentNote(type,note,velocity=.8){
- getContext();const key=String(note);if(voices.has(key))stopInstrumentNote(note);
- const source=ctx.createBufferSource();source.buffer=getVoiceBuffer(type,note);
- const gain=ctx.createGain(),now=ctx.currentTime,level=Math.max(.02,Math.min(1,velocity));
- gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(level*.72,now+.009);
- source.connect(gain);gain.connect(master);source.start(now);
- if(type==='drum'){gain.gain.setTargetAtTime(.0001,now+.22,.055);source.stop(now+.72);}
- const voice={source,gain};voices.set(key,voice);
- source.onended=()=>{if(voices.get(key)===voice)voices.delete(key);try{gain.disconnect();}catch{}};
+ getContext();const key=String(note);stopInstrumentNote(note);
+ const request={released:false};pendingVoices.set(key,request);
+ loadInstrumentVoice(type,Number(note),velocity).then(voice=>{
+  if(pendingVoices.get(key)!==request)return;
+  pendingVoices.delete(key);
+  const source=ctx.createBufferSource();source.buffer=voice.buffer;source.playbackRate.value=voice.rate;
+  const gain=ctx.createGain(),now=ctx.currentTime,level=Math.max(.02,Math.min(1,velocity));
+  gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(level*.76,now+.012);
+  source.connect(gain);gain.connect(master);
+  const entry={source,gain,oneShot:voice.oneShot};
+  voices.set(key,entry);
+  source.onended=()=>{if(voices.get(key)===entry)voices.delete(key);try{gain.disconnect();}catch{}};
+  source.start(now);
+  if(request.released&&!voice.oneShot){gain.gain.setTargetAtTime(.0001,now+.01,.035);try{source.stop(now+.19);}catch{}}
+ }).catch(err=>{if(pendingVoices.get(key)===request)pendingVoices.delete(key);console.warn('Instrument sample unavailable:',type,note,err);});
 }
-export function stopInstrumentNote(note){const v=voices.get(String(note));if(!v)return;try{v.gain.gain.cancelScheduledValues(ctx.currentTime);v.gain.gain.setTargetAtTime(.0001,ctx.currentTime,.035);v.source.stop(ctx.currentTime+.18);}catch{}voices.delete(String(note));}
+export function stopInstrumentNote(note){
+ const key=String(note),pending=pendingVoices.get(key);
+ if(pending){pending.released=true;return;}
+ const voice=voices.get(key);if(!voice||voice.oneShot)return;
+ try{voice.gain.gain.cancelScheduledValues(ctx.currentTime);voice.gain.gain.setTargetAtTime(.0001,ctx.currentTime,.035);voice.source.stop(ctx.currentTime+.18);}catch{}
+ voices.delete(key);
+}

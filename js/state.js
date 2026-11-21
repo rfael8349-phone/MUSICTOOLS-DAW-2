@@ -15,7 +15,7 @@ export function createTrack(kind='audio',name=null) {
   const track={
     id:newId('trk'),kind,name:name||`${kind==='audio'?'Audio':kind==='midi'?'MIDI':'Drum'} ${idx+1}`,
     color:colors[idx%colors.length],volume:1,pan:0,mute:false,solo:false,armed:false,input:null,
-    clips:[],takes:[],inputGainDb:0,
+    clips:[],takes:[],inputGainDb:0,inputDeviceId:null,
     eq:{low:0,lowMid:0,mid:0,highMid:0,high:0},
     effects:[],compressor:{enabled:false,threshold:-18,ratio:3},outputFormat:'wav'
   };
