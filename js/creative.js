@@ -64,7 +64,7 @@ function renderDrums(host){
  const importLabel=node('label','btn','IMPORTAR SAMPLES WAV / MP3');importLabel.htmlFor='sample-file';host.append(importLabel);
 }
 function renderThemes(){
- const themes=[['xp','Windows XP'],['classic','Macintosh Classic'],['dark','Studio Dark'],['winamp','Winamp Retro'],['analog','Analog 80s'],['modern','Modern Studio']];
+ const themes=[['xp','Windows XP'],['classic','Classic Studio'],['dark','Studio Dark'],['winamp','Winamp Retro'],['analog','Analog 80s'],['modern','Modern Studio'],['fl','Color Beat'],['minimal','Media Minimal'],['cyber','Cyber Neon'],['metal','Industrial Metal']];
  const box=node('div','theme-picker');const label=node('strong','','APARIENCIA');const select=node('select','studio-select');
  themes.forEach(([v,l])=>{const o=node('option','',l);o.value=v;select.append(o);});select.value=theme;
  select.onchange=()=>{theme=select.value;document.documentElement.dataset.theme=theme;localStorage.setItem('musictool-theme',theme);};
