@@ -290,7 +290,13 @@ export function preloadInstrumentSamples(){
  return samplePreloadPromise;
 }
 export function playInstrumentNote(type,note,velocity=.8){
- getContext();const key=String(note);stopInstrumentNote(note);
+ getContext();
+ // Capture the destination at note-on: changing the selected track while a sample
+ // is loading must not silently route that note into a different channel.
+ const selected=state.tracks.find(track=>track.id===state.selectedTrackId);
+ const trackId=selected?.id||null;
+ const key=[type,trackId??'master',Number(note)].join(':');
+ stopInstrumentNote(note,type,trackId);
  const request={released:false};pendingVoices.set(key,request);
  loadInstrumentVoice(type,Number(note),velocity).then(voice=>{
   if(pendingVoices.get(key)!==request)return;
@@ -299,21 +305,29 @@ export function playInstrumentNote(type,note,velocity=.8){
   const gain=ctx.createGain(),now=ctx.currentTime,level=Math.max(.02,Math.min(1,velocity));
   gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(level*.76,now+.012);
   source.connect(gain);
-  // Live instruments pass through the currently selected track strip, so its EQ, gain and FX are audible.
-  const selected=state.tracks.find(track=>track.id===state.selectedTrackId);
+  // Each live voice belongs to one channel strip. Equal pitches on different
+  // tracks/types remain independent instead of replacing each other in a global note map.
   const destination=selected?ensureChannel(selected.id).gain:master;
   gain.connect(destination);
-  const entry={source,gain,oneShot:voice.oneShot,trackId:selected?.id||null};
+  const entry={source,gain,oneShot:voice.oneShot,trackId,type,note:Number(note)};
   voices.set(key,entry);
   source.onended=()=>{if(voices.get(key)===entry)voices.delete(key);try{gain.disconnect();}catch{}};
   source.start(now);
   if(request.released&&!voice.oneShot){gain.gain.setTargetAtTime(.0001,now+.01,.035);try{source.stop(now+.19);}catch{}}
  }).catch(err=>{if(pendingVoices.get(key)===request)pendingVoices.delete(key);console.warn('Instrument sample unavailable:',type,note,err);});
 }
-export function stopInstrumentNote(note){
- const key=String(note),pending=pendingVoices.get(key);
- if(pending){pending.released=true;return;}
- const voice=voices.get(key);if(!voice||voice.oneShot)return;
- try{voice.gain.gain.cancelScheduledValues(ctx.currentTime);voice.gain.gain.setTargetAtTime(.0001,ctx.currentTime,.035);voice.source.stop(ctx.currentTime+.18);}catch{}
- voices.delete(key);
+export function stopInstrumentNote(note,type=null,trackId=null){
+ const pitch=Number(note);
+ // Older UI callers only supply the pitch. Stop every matching sustained voice;
+ // newer callers may narrow this to an instrument and/or channel.
+ for(const [key,pending] of pendingVoices){
+  const [voiceType,voiceTrack,voicePitch]=key.split(':');
+  if(Number(voicePitch)!==pitch||(type&&voiceType!==type)||(trackId&&voiceTrack!==trackId))continue;
+  pending.released=true;
+ }
+ for(const [key,voice] of voices){
+  if(voice.note!==pitch||(type&&voice.type!==type)||(trackId&&voice.trackId!==trackId)||voice.oneShot)continue;
+  try{voice.gain.gain.cancelScheduledValues(ctx.currentTime);voice.gain.gain.setTargetAtTime(.0001,ctx.currentTime,.035);voice.source.stop(ctx.currentTime+.18);}catch{}
+  voices.delete(key);
+ }
 }
