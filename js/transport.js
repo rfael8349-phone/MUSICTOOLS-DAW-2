@@ -121,6 +121,7 @@ export async function startRecord() {
     const micPermission = requestMic(track.inputDeviceId || null);
     const audioReady = resume();
     await Promise.all([micPermission, audioReady]);
+    if (startToken !== recordStartToken) { clearRecordArm(); return; }
 
     if (!state.isPlaying) {
       await play();
@@ -175,7 +176,9 @@ export async function stopRecord() {
   recBtn().classList.remove('active');
   if (localRecTimer) { clearInterval(localRecTimer); localRecTimer = null; }
 
-  const result = await stopRecording();
+  let result;
+  try { result = await stopRecording(); }
+  catch (err) { pause(); clearRecordArm(); toast('Could not finalize recording'); return; }
   const stopSec = state.playhead;
   pause();
 
