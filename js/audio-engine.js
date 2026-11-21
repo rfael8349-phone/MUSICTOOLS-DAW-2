@@ -85,16 +85,15 @@ function scheduleClip(track,clip,ch,fromSec,t0){
    const relative=Number(note.time)||0,duration=Math.max(.04,Number(note.duration)||.2);
    if(relative+duration<=clipOffset)continue;
    const when=clipStart+Math.max(0,relative-clipOffset),remaining=Math.max(.04,duration-Math.max(0,clipOffset-relative));
-   const osc=ctx.createOscillator(),gain=ctx.createGain();
-   const freq=440*Math.pow(2,((Number(note.pitch)||60)-69)/12);
-   osc.type=clip.instrument==='bass'?'square':clip.instrument==='guitar'?'triangle':'sawtooth';
-   osc.frequency.setValueAtTime(freq,when);
+   const source=ctx.createBufferSource(),gain=ctx.createGain();
+   source.buffer=getVoiceBuffer(clip.instrument||'piano',Number(note.pitch)||60);
    const velocity=Math.max(.03,Math.min(1,Number(note.velocity)||.8));
-   gain.gain.setValueAtTime(.0001,when);gain.gain.linearRampToValueAtTime(velocity*.22,when+.012);
-   gain.gain.setValueAtTime(velocity*.22,when+Math.max(.02,remaining-.025));gain.gain.linearRampToValueAtTime(.0001,when+remaining);
-   osc.connect(gain);gain.connect(ch.gain);osc.start(when);osc.stop(when+remaining+.01);
-   const entry={source:osc,gain,startTime:when,clipId:clip.id,trackId:track.id};
-   osc.onended=()=>{const i=activeSources.indexOf(entry);if(i>=0)activeSources.splice(i,1);try{gain.disconnect();}catch{}};
+   const noteEnd=when+Math.max(.16,remaining);
+   gain.gain.setValueAtTime(.0001,when);gain.gain.linearRampToValueAtTime(velocity*.72,when+.012);
+   gain.gain.setValueAtTime(velocity*.72,Math.max(when+.025,noteEnd-.045));gain.gain.linearRampToValueAtTime(.0001,noteEnd);
+   source.connect(gain);gain.connect(ch.gain);source.start(when);source.stop(noteEnd+.02);
+   const entry={source,gain,startTime:when,clipId:clip.id,trackId:track.id};
+   source.onended=()=>{const i=activeSources.indexOf(entry);if(i>=0)activeSources.splice(i,1);try{gain.disconnect();}catch{}};
    activeSources.push(entry);
   }
   return;
@@ -110,24 +109,76 @@ export async function decodeAudio(arrayBuffer){getContext();return await ctx.dec
 export function computePeaks(buffer,buckets=200){const data=buffer.getChannelData(0),per=Math.floor(data.length/buckets)||1,peaks=new Float32Array(buckets);for(let i=0;i<buckets;i++){let max=0;for(let j=i*per;j<Math.min((i+1)*per,data.length);j++)max=Math.max(max,Math.abs(data[j]));peaks[i]=max;}return peaks;}
 export function nowSec(){getContext();return ctx.currentTime;}
 
-// Lightweight playable instrument voice for computer keys, pads and MIDI input.
+// MUSICTOOL instrument engine: synthesized acoustic-style sample models.
+const instrumentBuffers=new Map();
+function getVoiceBuffer(type,note){
+ const id=String(type)+':'+String(note);
+ if(instrumentBuffers.has(id))return instrumentBuffers.get(id);
+ const sr=ctx.sampleRate,frequency=440*Math.pow(2,(Number(note)-69)/12);
+ let buffer;
+ if(type==='drum'){
+  const length=Math.floor(sr*.72);buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
+  const hats=[42,46,49,51,52,55,57],snare=[38,39,40],kick=[35,36];
+  const tomFreq={45:115,47:145,48:175,50:205,43:95};
+  let prev=0;
+  for(let i=0;i<length;i++){
+   const t=i/sr,noise=Math.random()*2-1;let v=0;
+   if(kick.includes(Number(note))){const f=42+105*Math.exp(-t*19);v=Math.sin(2*Math.PI*f*t)*Math.exp(-t*8)+noise*Math.exp(-t*95)*.12;}
+   else if(snare.includes(Number(note))){const hp=noise-prev*.88;prev=noise;v=(hp*.72+Math.sin(2*Math.PI*185*t)*.28)*Math.exp(-t*19);}
+   else if(hats.includes(Number(note))){const hp=noise-prev*.94;prev=noise;v=hp*Math.exp(-t*(note===46?13:38))*.55;}
+   else {const f=(tomFreq[note]||155)*(1-.42*Math.min(1,t/.24));v=Math.sin(2*Math.PI*f*t)*Math.exp(-t*8)+noise*Math.exp(-t*45)*.06;}
+   data[i]=v*.72;
+  }
+ }else if(type==='piano'){
+  // Deterministic multi-partial piano model: hammer transient, inharmonic
+  // upper partials and independent decay rates (no white-noise oscillator).
+  const length=Math.floor(sr*3.0);buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
+  const partials=[1,.52,.27,.15,.09,.055,.033,.02],decays=[1.65,2.25,3.1,4.0,4.9,5.8,6.8,7.8];
+  const detune=frequency<180?.0018:.0008;
+  for(let i=0;i<length;i++){
+   const t=i/sr;let v=0;
+   for(let h=0;h<partials.length;h++){
+    const order=h+1,inharmonic=Math.sqrt(1+.00016*order*order);
+    const f=frequency*order*inharmonic;
+    const stringA=Math.sin(2*Math.PI*f*t),stringB=Math.sin(2*Math.PI*f*(1+detune)*t);
+    v+=partials[h]*((stringA+stringB)*.5)*Math.exp(-decays[h]*t);
+   }
+   const hammer=(Math.sin(2*Math.PI*frequency*8.4*t)*Math.exp(-t*105)*.035);
+   const attack=Math.min(1,t*sr/18);
+   data[i]=(v*attack+hammer)*.43;
+  }
+ }else if(type==='guitar'||type==='bass'){
+  // Plucked-string tone with harmonic decay and a short pick transient.
+  const length=Math.floor(sr*(type==='bass'?2.6:2.8));buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
+  const partials=type==='bass'?[1,.42,.2,.09,.035]:[1,.62,.36,.2,.11,.055,.025];
+  const decay=type==='bass'?.78:1.25;
+  for(let i=0;i<length;i++){
+   const t=i/sr;let v=0;
+   for(let h=0;h<partials.length;h++){
+    const n=h+1;const f=frequency*n;
+    v+=partials[h]*Math.sin(2*Math.PI*f*t)*Math.exp(-decay*t*(1+.24*h));
+   }
+   const pick=Math.sin(2*Math.PI*frequency*5.8*t)*Math.exp(-t*85)*.055;
+   data[i]=(v+pick)*Math.min(1,t*sr/12)*(type==='bass'?.32:.24);
+  }
+ }else if(type==='pad'){
+  const length=Math.floor(sr*2.1);buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
+  for(let i=0;i<length;i++){const t=i/sr;const env=Math.min(1,t*5)*Math.exp(-t*.9);data[i]=(Math.sin(2*Math.PI*frequency*t)+.28*Math.sin(4*Math.PI*frequency*t)+.12*Math.sin(6*Math.PI*frequency*t))*env*.22;}
+ }else{
+  const length=Math.floor(sr*1.8);buffer=ctx.createBuffer(1,length,sr);const data=buffer.getChannelData(0);
+  for(let i=0;i<length;i++){const t=i/sr;const env=Math.exp(-t*1.8);data[i]=(Math.sin(2*Math.PI*frequency*t)+.2*Math.sin(4*Math.PI*frequency*t)+.08*Math.sin(6*Math.PI*frequency*t))*env*.28;}
+ }
+ instrumentBuffers.set(id,buffer);
+ return buffer;
+}
 export function playInstrumentNote(type,note,velocity=.8){
  getContext();const key=String(note);if(voices.has(key))stopInstrumentNote(note);
- const gain=ctx.createGain();gain.gain.setValueAtTime(.0001,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(Math.max(.02,Math.min(1,velocity))*.18,ctx.currentTime+.012);
- let source;
- if(type.startsWith('drum')){
-  source=ctx.createOscillator();source.type='sine';
-  const drumFreq={36:125,38:185,39:240,42:920,46:1250,45:115,47:145,48:175,49:1500,51:1750,37:650,50:205,43:95,52:1300,55:1100,57:1650};
-  const base=drumFreq[note]||260;
-  source.frequency.setValueAtTime(base,ctx.currentTime);
-  source.frequency.exponentialRampToValueAtTime(note===36?42:Math.max(70,base*.35),ctx.currentTime+.18);
-  gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.28);
- }else{
-  source=ctx.createOscillator();
-  source.type=type==='pad'?'triangle':type==='bass'?'square':type==='guitar'?'triangle':'sawtooth';
-  source.frequency.value=440*Math.pow(2,(note-69)/12);
- }
- source.connect(gain);gain.connect(master);source.start();if(type.startsWith('drum'))source.stop(ctx.currentTime+.3);
- voices.set(key,{source,gain});
+ const source=ctx.createBufferSource();source.buffer=getVoiceBuffer(type,note);
+ const gain=ctx.createGain(),now=ctx.currentTime,level=Math.max(.02,Math.min(1,velocity));
+ gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(level*.72,now+.009);
+ source.connect(gain);gain.connect(master);source.start(now);
+ if(type==='drum'){gain.gain.setTargetAtTime(.0001,now+.22,.055);source.stop(now+.72);}
+ const voice={source,gain};voices.set(key,voice);
+ source.onended=()=>{if(voices.get(key)===voice)voices.delete(key);try{gain.disconnect();}catch{}};
 }
-export function stopInstrumentNote(note){const v=voices.get(String(note));if(!v)return;try{v.gain.gain.cancelScheduledValues(ctx.currentTime);v.gain.gain.setTargetAtTime(.0001,ctx.currentTime,.045);v.source.stop(ctx.currentTime+.22);}catch{}voices.delete(String(note));}
+export function stopInstrumentNote(note){const v=voices.get(String(note));if(!v)return;try{v.gain.gain.cancelScheduledValues(ctx.currentTime);v.gain.gain.setTargetAtTime(.0001,ctx.currentTime,.035);v.source.stop(ctx.currentTime+.18);}catch{}voices.delete(String(note));}
