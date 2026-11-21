@@ -5,6 +5,7 @@ import * as playlist from './playlist.js';
 import { saveProject, loadProject } from './storage.js';
 import { resume } from './audio-engine.js';
 import { mountSamples } from './samples.js';
+import { mountStudio } from './studio.js';
 
 const byId = (id) => document.getElementById(id);
 
@@ -110,6 +111,7 @@ async function boot() {
   try {
     syncUI();
     playlist.mount();
+    mountStudio();
     playlist.renderMixer();
   } catch (err) {
     showBootError(err);
