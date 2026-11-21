@@ -88,3 +88,8 @@ input, select, textarea { font-family: inherit; color: inherit; }
 :root[data-theme="minimal"]{--bg:#f3f4f6;--bg-2:#fff;--bg-3:#e9edf2;--panel:#fff;--panel-2:#edf1f5;--border:#d2d8e0;--border-hi:#aeb8c5;--text:#202733;--text-dim:#667085;--cream:#111827;--red:#e65c50;--cyan:#168e9c}
 :root[data-theme="cyber"]{--bg:#080516;--bg-2:#160d2b;--bg-3:#24113c;--panel:#180d2c;--panel-2:#2c1745;--border:#542b72;--red:#ff3dbd;--cyan:#21e6ff;--neon:#ff3dbd}
 :root[data-theme="metal"]{--bg:#111;--bg-2:#1b1b1b;--bg-3:#292929;--panel:#202020;--panel-2:#303030;--border:#454545;--border-hi:#686868;--red:#c63a32;--cyan:#9aa5ae;--cream:#e4e4e4}
+
+
+/* V7.1 — softened XP and Fluent-inspired Windows 11 palette */
+:root[data-theme="xp"]{--bg:#dce8f5;--bg-2:#eaf2fa;--bg-3:#f4f8fc;--panel:#e8f0f8;--panel-2:#d4e4f4;--border:#b5c9df;--border-hi:#8eabc9;--text:#263b53;--text-dim:#60768e;--cream:#263b53;--red:#477fb7;--red-dark:#315f91;--cyan:#397eaa;--radius:8px;--radius-lg:12px}
+:root[data-theme="modern"]{--bg:#10141b;--bg-2:#171d27;--bg-3:#202938;--panel:#1a2230;--panel-2:#263246;--border:#303e52;--border-hi:#435873;--text:#e7edf6;--text-dim:#9aa9bd;--cream:#f5f8fc;--red:#6aa9f4;--red-dark:#477fbe;--cyan:#8ac6ff;--blue:#6aa9f4;--radius:10px;--radius-lg:14px}
