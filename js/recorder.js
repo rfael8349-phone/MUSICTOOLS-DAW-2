@@ -55,7 +55,7 @@ export async function startRecording({ monitor = true, inputGainDb = 0 } = {}) {
 
   // Dedicated input gain affects the recorded signal, not the monitor volume.
   captureGain = ctx.createGain();
-  captureGain.gain.value = Math.pow(10, Math.max(-24, Math.min(24, Number(inputGainDb) || 0)) / 20);
+  captureGain.gain.value = Math.pow(10, Math.max(-12, Math.min(36, Number(inputGainDb) || 0)) / 20);
   sourceNode.connect(captureGain);
 
   // capture path
