@@ -190,8 +190,8 @@ let nextClickTime = 0;
 export function toggleMetronome() {
   state.metronome = !state.metronome;
   document.getElementById('btn-metro').classList.toggle('active', state.metronome);
-  if (state.metronome && state.isPlaying) scheduleMetronome(state.playhead);
-  if (!state.metronome) stopMetronome();
+  if (state.metronome && state.isPlaying && !state.isRecording && !recordStarting) scheduleMetronome(state.playhead);
+  if (!state.metronome || state.isRecording || recordStarting) stopMetronome();
 }
 
 function scheduleMetronome(fromSec) {
