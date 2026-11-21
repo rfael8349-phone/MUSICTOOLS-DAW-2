@@ -132,12 +132,12 @@ function makePitchedVoice(type,note,velocity,when,duration,destination){
  for(const [ratio,wave,level] of partials){
   const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type=wave;osc.frequency.setValueAtTime(freq*ratio,when);gain.gain.value=level;osc.connect(gain);gain.connect(filter);osc.start(when);sources.push(osc);
  }
- if(type==='piano'){output.gain.exponentialRampToValueAtTime(Math.max(.0002,vel*.095),when+.24);}
+ if(type==='piano'){const decayAt=when+(Number.isFinite(duration)?Math.min(.24,duration*.62):.24);output.gain.exponentialRampToValueAtTime(Math.max(.0002,vel*.095),decayAt);}
  if(type==='guitar'){
-  output.gain.exponentialRampToValueAtTime(Math.max(.0002,vel*.035),when+.55);
+  output.gain.exponentialRampToValueAtTime(Math.max(.0002,vel*.035),when+(Number.isFinite(duration)?Math.min(.55,duration*.68):.55));
   const click=ctx.createBufferSource(),clickFilter=ctx.createBiquadFilter(),clickGain=ctx.createGain();click.buffer=getNoiseBuffer();clickFilter.type='bandpass';clickFilter.frequency.value=2400;clickFilter.Q.value=.8;clickGain.gain.setValueAtTime(.0001,when);clickGain.gain.linearRampToValueAtTime(vel*.045,when+.002);clickGain.gain.exponentialRampToValueAtTime(.0001,when+.028);click.connect(clickFilter);clickFilter.connect(clickGain);clickGain.connect(output);click.start(when);click.stop(when+.035);sources.push(click);
  }
- if(type==='bass')output.gain.exponentialRampToValueAtTime(Math.max(.0002,vel*.16),when+.18);
+ if(type==='bass')output.gain.exponentialRampToValueAtTime(Math.max(.0002,vel*.16),when+(Number.isFinite(duration)?Math.min(.18,duration*.62):.18));
  output.connect(destination);
  const voice={sources,gain:output,filter,releasing:false};
  if(Number.isFinite(duration)&&duration>0)releaseVoice(voice,when+duration);
