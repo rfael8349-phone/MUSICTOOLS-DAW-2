@@ -164,7 +164,7 @@ function renderInstrumentPanel(host, mode) {
   Object.keys(scaleIntervals).forEach(s=>{const o=el('option','',s.toUpperCase());o.value=s;o.selected=s===scaleName;scaleSel.append(o);});
   scaleSel.onchange=()=>scaleName=scaleSel.value;
   const toneSel=el('select','studio-select');
-  [['piano','PIANO'],['guitar','GUITAR'],['bass','BASS'],['synth','SYNTH PAD']].forEach(([v,l])=>{const o=el('option','',l);o.value=v;o.selected=v===instrumentTone;toneSel.append(o);});
+  [['piano','PIANO'],['guitar','GUITARRA ELÉCTRICA'],['acoustic','GUITARRA ACÚSTICA'],['bass','BAJO'],['synth','SYNTH PAD']].forEach(([v,l])=>{const o=el('option','',l);o.value=v;o.selected=v===instrumentTone;toneSel.append(o);});
   toneSel.onchange=()=>instrumentTone=toneSel.value;
   const qwerty=el('button','btn'+(qwertyEnabled?' accent':''),qwertyEnabled?'QWERTY ON':'QWERTY OFF');
   qwerty.onclick=()=>{qwertyEnabled=!qwertyEnabled;renderInstrumentPanel(host,mode);};
