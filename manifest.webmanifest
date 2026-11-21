@@ -1,8 +1,8 @@
 {
-  "name": "MUSICTOOL DAW V7.4.1",
+  "name": "MUSICTOOL DAW V7.6.0",
   "short_name": "MUSICTOOL",
   "description": "MUSICTOOL DAW with adaptive mobile, tablet and desktop workspaces, external MIDI and audio input support.",
-  "start_url": "./index.html?v=7.4.1",
+  "start_url": "./index.html?v=7.6.0",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
