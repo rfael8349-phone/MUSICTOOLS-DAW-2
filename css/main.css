@@ -872,3 +872,4 @@
 .sample-waveform{grid-column:1/-1;height:58px;display:flex;align-items:center;gap:2px;padding:5px 7px;border-radius:6px;background:var(--bg-1);overflow:hidden}
 .sample-wave-bar{flex:1;min-width:1px;background:var(--text-dim);opacity:.45;border-radius:2px;min-height:2px}
 .sample-wave-bar.selected{background:var(--cyan);opacity:1}
+\n/* V7.0.1 sample waveform preview */\n.sample-waveform{display:block;width:100%;height:42px;grid-column:1/-1;border-radius:4px;background:#182536;min-width:0}\n
