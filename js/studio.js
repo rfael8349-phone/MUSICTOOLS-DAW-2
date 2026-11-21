@@ -70,7 +70,7 @@ export function openChannelEditor(trackId) {
   compBox.append(slider('Threshold',-48,0,1,track.compressor.threshold,v=>{track.compressor.threshold=v;updateChannel(track);},' dB'));
   compBox.append(slider('Ratio',1,12,.5,track.compressor.ratio,v=>{track.compressor.ratio=v;updateChannel(track);},':1'));
   const fxBox=el('section','studio-card'); fxBox.append(el('h3','','PEDALES Y EFECTOS'));
-  const effectTypes=[['overdrive','OVERDRIVE'],['distortion','DISTORTION'],['delay','DELAY'],['reverb','REVERB'],['chorus','CHORUS']];
+  const effectTypes=[['overdrive','OVERDRIVE'],['distortion','DISTORTION'],['amp-cab','AMP / CAB'],['delay','DELAY'],['reverb','REVERB'],['chorus','CHORUS']];
   for(const [type,label] of effectTypes) {
     let fx=track.effects.find(x=>x.type===type);
     const row=el('label','effect-row');

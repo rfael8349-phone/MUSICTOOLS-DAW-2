@@ -1,12 +1,19 @@
 {
-  "name": "MUSICTOOL DAW V7.0",
-  "short_name": "MUSICTOOL V7.0",
-  "description": "MUSICTOOL DAW V7.0 — Windows XP-inspired multitrack audio workstation with isolated recording tracks and touch instruments.",
-  "start_url": "./index.html?v=7.0.0",
+  "name": "MUSICTOOL DAW V7.0.1",
+  "short_name": "MUSICTOOL V7.0.1",
+  "description": "MUSICTOOL DAW V7.0.1 — mobile multitrack audio workstation with MIDI clips, sample library and independent channel strips.",
+  "start_url": "./index.html?v=7.0.1",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0a0a0f",
   "theme_color": "#0a0a0f",
-  "icons": [{"src":"assets/mascot.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+  "icons": [
+    {
+      "src": "assets/mascot.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }

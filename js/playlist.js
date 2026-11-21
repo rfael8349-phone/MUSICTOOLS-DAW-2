@@ -127,8 +127,27 @@ function renderTrackHeader(track) {
   // Tap-to-rename on mobile
   name.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (Date.now() - (name._t || 0) < 400) renameTrack(track, meta, name);
-    name._t = Date.now();
+    const now = Date.now();
+    if (now - (name._t || 0) < 400) {
+      renameTrack(track, meta, name);
+    } else {
+      // A tap on the track name must select the whole lane just like a tap
+      // on the rest of its header. Update in place so a second tap can rename.
+      state.selectedTrackId = track.id;
+      for (const t of state.tracks) t.armed = t.id === track.id;
+      document.querySelectorAll('.track-header').forEach(header => {
+        const active = header.dataset.id === track.id;
+        header.classList.toggle('selected', active);
+        const arm = header.querySelector('.track-toggle.rec');
+        if (arm) {
+          arm.classList.toggle('on', active);
+          arm.title = active ? 'Disarm recording on this track' : 'Arm this track for recording';
+          arm.setAttribute('aria-label', arm.title);
+        }
+      });
+      saveProject();
+    }
+    name._t = now;
   });
 
   const ctr = document.createElement('div');

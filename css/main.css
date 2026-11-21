@@ -853,3 +853,22 @@
 .theme-picker select{max-width:112px}
 @media (orientation:portrait) and (max-width:700px){.piano-keyboard{height:clamp(230px,40vh,390px)}.creative-view{padding:8px}.creative-heading{font-size:16px}}
 @media (orientation:landscape) and (max-height:600px){.piano-keyboard{height:clamp(115px,34vh,205px)}.creative-view{padding:6px;gap:6px}.piano-white{font-size:8px;padding-bottom:3px}.piano-black{font-size:7px}}
+
+
+/* V7.0 MIDI clip editor */
+.midi-editor-panel{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.midi-clip-card{padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-3);display:flex;flex-direction:column;gap:8px;min-width:0}
+.midi-note-grid{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow:auto}
+.midi-note-row{display:grid;grid-template-columns:92px minmax(50px,1fr) 32px;gap:6px;align-items:center;min-height:27px}
+.midi-note-lane{height:18px;position:relative;background:repeating-linear-gradient(90deg,var(--bg-2) 0,var(--bg-2) calc(6.25% - 1px),var(--border) 6.25%);border-radius:3px;overflow:hidden}
+.midi-note-bar{position:absolute;top:2px;bottom:2px;min-width:3px;background:var(--cyan);border-radius:3px}
+.sample-trim{display:grid;grid-template-columns:1fr 1fr;gap:8px;grid-column:1/-1;padding:5px 0}
+.sample-trim label{display:flex;flex-direction:column;gap:3px;font-size:10px;color:var(--text-dim)}
+.sample-trim input{width:100%;min-width:0}
+.sample-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:7px;align-items:center}
+@media(max-width:520px){.midi-note-row{grid-template-columns:76px minmax(40px,1fr) 28px}.midi-clip-card{padding:7px}.sample-row{grid-template-columns:minmax(0,1fr) auto auto auto}.sample-row .sample-info{min-width:0;overflow-wrap:anywhere}.sample-row .sample-trim{gap:6px}}
+
+/* Sample waveform preview and selected trim range */
+.sample-waveform{grid-column:1/-1;height:58px;display:flex;align-items:center;gap:2px;padding:5px 7px;border-radius:6px;background:var(--bg-1);overflow:hidden}
+.sample-wave-bar{flex:1;min-width:1px;background:var(--text-dim);opacity:.45;border-radius:2px;min-height:2px}
+.sample-wave-bar.selected{background:var(--cyan);opacity:1}
