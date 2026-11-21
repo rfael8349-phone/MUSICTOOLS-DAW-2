@@ -1,0 +1,12 @@
+{
+  "name": "MUSICTOOL DAW V5",
+  "short_name": "MUSICTOOL",
+  "description": "Mobile-first multitrack audio workstation.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "icons": [{"src":"assets/mascot.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}
