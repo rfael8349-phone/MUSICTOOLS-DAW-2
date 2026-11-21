@@ -136,7 +136,14 @@ function renderTrackHeader(track) {
       state.selectedTrackId = track.id;
       for (const t of state.tracks) t.armed = t.id === track.id;
       document.querySelectorAll('.track-header').forEach(header => {
-        header.classList.toggle('selected', header.dataset.id === track.id);
+        const active = header.dataset.id === track.id;
+        header.classList.toggle('selected', active);
+        const arm = header.querySelector('.track-toggle.rec');
+        if (arm) {
+          arm.classList.toggle('on', active);
+          arm.title = active ? 'Disarm recording on this track' : 'Arm this track for recording';
+          arm.setAttribute('aria-label', arm.title);
+        }
       });
       saveProject();
     }
