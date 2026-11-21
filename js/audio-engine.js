@@ -210,7 +210,7 @@ const drumMap={
  35:'kick',36:'kickBig',37:'rim',38:'snare',39:'clap',40:'snareRim',41:'tomFloor',
  42:'hat',43:'kick',44:'hatPedal',45:'tomFloor',46:'hatOpen',47:'tomLow',48:'tomHigh',
  49:'crash',50:'tomHigh',51:'ride',52:'crash',53:'rideBell',54:'tambourine',55:'rideBell',
- 56:'rideBell',57:'crashElectronic'
+ 56:'rideBell',57:'crash'
 };
 const padOrder=['kickBig','snare','clap','hat','hatOpen','tomFloor','tomLow','tomHigh','crash','ride','rim','kick','snareRim','snareTight','hatPedal','rideBell'];
 function nearestMap(map,note){
