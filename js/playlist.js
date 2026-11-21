@@ -291,89 +291,63 @@ function renderTimeline() {
   host.innerHTML = '';
   const dur = Math.max(songDuration(), 30);
   const widthPx = dur * PX_PER_SEC();
-
-  // Grid lines
-  const grid = document.createElement('div');
-  grid.style.position = 'absolute';
-  grid.style.top = '0';
-  grid.style.bottom = '0';
-  grid.style.left = '0';
-  grid.style.width = widthPx + 'px';
-  grid.style.pointerEvents = 'none';
-  const secPerBeat = 60 / state.bpm;
-  const beatsPerBar = state.timeSig[0];
+  const secPerBeat = (60 / state.bpm) * (4 / (Number(state.timeSig?.[1]) || 4));
+  const beatsPerBar = Math.max(1, Number(state.timeSig?.[0]) || 4);
   const barSec = secPerBeat * beatsPerBar;
-  for (let b = 0; b <= dur / barSec + 1; b++) {
+
+  // Beat grid: strong bar lines, lighter beat lines, all sharing one time scale.
+  const grid = document.createElement('div');
+  grid.className = 'timeline-grid';
+  grid.style.width = widthPx + 'px';
+  for (let beat = 0; beat <= Math.ceil(dur / secPerBeat); beat++) {
     const line = document.createElement('div');
-    line.className = 'grid-line major';
-    line.style.left = (b * barSec * PX_PER_SEC()) + 'px';
-    grid.appendChild(line);
-  }
-  for (let sec = 0; sec <= dur + 1; sec++) {
-    if (sec % barSec === 0) continue;
-    const line = document.createElement('div');
-    line.className = 'grid-line';
-    line.style.left = (sec * PX_PER_SEC()) + 'px';
+    line.className = beat % beatsPerBar === 0 ? 'grid-line major' : 'grid-line beat-line';
+    line.style.left = (beat * secPerBeat * PX_PER_SEC()) + 'px';
     grid.appendChild(line);
   }
   host.appendChild(grid);
+  renderRuler(dur, secPerBeat, beatsPerBar);
 
-  // Ruler
-  renderRuler(dur);
-
-  // Track lanes
   for (const track of state.tracks) {
     const lane = document.createElement('div');
     lane.className = 'track-lane';
     lane.dataset.id = track.id;
     lane.style.width = widthPx + 'px';
-
-    for (const clip of track.clips) {
-      lane.appendChild(renderClip(track, clip));
-    }
-
-    // Click empty space = move playhead
-    lane.addEventListener('mousedown', (e) => {
+    for (const clip of track.clips) lane.appendChild(renderClip(track, clip));
+    lane.addEventListener('pointerdown', (e) => {
       if (e.target !== lane) return;
       const rect = lane.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      setPlayheadFromClick(x);
+      const scroll = document.getElementById('timeline-scroll');
+      setPlayheadFromClick(e.clientX - rect.left + scroll.scrollLeft);
     });
-    lane.addEventListener('touchstart', (e) => {
-      if (e.target !== lane) return;
-      const rect = lane.getBoundingClientRect();
-      const x = e.touches[0].clientX - rect.left;
-      setPlayheadFromClick(x);
-    }, { passive: true });
-
     host.appendChild(lane);
   }
-
-  // Set timeline width
   host.style.width = widthPx + 'px';
   host.style.minHeight = (state.tracks.length * 56 + 8) + 'px';
 }
 
-function renderRuler(dur) {
+function renderRuler(dur, secPerBeat, beatsPerBar) {
   const host = document.getElementById('ruler');
   host.innerHTML = '';
   host.style.width = (dur * PX_PER_SEC()) + 'px';
   host.style.position = 'sticky';
-  const secPerBeat = 60 / state.bpm;
-  const barSec = secPerBeat * state.timeSig[0];
-  const bars = Math.ceil(dur / barSec) + 1;
-  for (let b = 0; b < bars; b++) {
-    const label = document.createElement('span');
-    label.textContent = String(b + 1);
-    label.style.position = 'absolute';
-    label.style.left = (b * barSec * PX_PER_SEC() + 3) + 'px';
-    label.style.top = '4px';
-    label.style.fontSize = '9px';
-    label.style.color = 'var(--text-faint)';
-    host.appendChild(label);
+  const totalBeats = Math.ceil(dur / secPerBeat);
+  for (let beat = 0; beat <= totalBeats; beat++) {
+    const bar = Math.floor(beat / beatsPerBar) + 1;
+    const beatInBar = (beat % beatsPerBar) + 1;
+    const tick = document.createElement('button');
+    tick.type = 'button';
+    tick.className = beat % beatsPerBar === 0 ? 'ruler-tick bar-tick' : 'ruler-tick';
+    tick.textContent = beat % beatsPerBar === 0 ? String(bar) : String(beatInBar);
+    tick.title = 'Compás ' + bar + ', pulso ' + beatInBar + ' · ir a este punto';
+    tick.style.left = (beat * secPerBeat * PX_PER_SEC()) + 'px';
+    tick.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setPlayheadFromClick(beat * secPerBeat * PX_PER_SEC());
+    });
+    host.appendChild(tick);
   }
 }
-
 function renderClip(track, clip) {
   const el = document.createElement('div');
   el.className = 'clip' + (state.selectedClipId === clip.id ? ' selected' : '');
@@ -404,33 +378,49 @@ function renderClip(track, clip) {
     e.stopPropagation();
     state.selectedClipId = clip.id;
     state.selectedTrackId = track.id;
-    el.classList.add('selected');
-    drag = { startX: e.clientX, startClipStart: clip.startSec, moved: false, pointerId: e.pointerId };
+    drag = { startX: e.clientX, startClipStart: clip.startSec, moved: false, pointerId: e.pointerId, targetTrackId: track.id };
     try { el.setPointerCapture(e.pointerId); } catch {}
   });
   el.addEventListener('pointermove', (e) => {
     if (!drag || drag.pointerId !== e.pointerId) return;
     const dx = e.clientX - drag.startX;
-    if (Math.abs(dx) > 5 && !drag.moved) { drag.moved = true; pushHistory(); }
+    if (Math.abs(dx) > 5 && !drag.moved) { drag.moved = true; pushHistory(); el.classList.add('dragging'); }
     if (!drag.moved) return;
     let newStart = drag.startClipStart + dx / PX_PER_SEC();
-    if (state.snap) newStart = Math.round(newStart * 4) / 4;
+    if (state.snap) {
+      const beatSec = (60 / state.bpm) * (4 / (Number(state.timeSig?.[1]) || 4));
+      newStart = Math.round(newStart / (beatSec / 4)) * (beatSec / 4);
+    }
     clip.startSec = Math.max(0, newStart);
     el.style.left = (clip.startSec * PX_PER_SEC()) + 'px';
+    const under = document.elementFromPoint(e.clientX, e.clientY)?.closest('.track-lane');
+    if (under?.dataset.id) drag.targetTrackId = under.dataset.id;
   });
   const finishDrag = (e) => {
     if (!drag || drag.pointerId !== e.pointerId) return;
     const moved = drag.moved;
+    const destinationId = drag.targetTrackId;
     drag = null;
+    el.classList.remove('dragging');
     if (moved) {
+      const destination = findTrack(destinationId) || track;
+      if (destination.id !== track.id) {
+        const source = findTrack(track.id);
+        if (source) source.clips = source.clips.filter(c => c.id !== clip.id);
+        destination.clips.push(clip);
+        state.selectedTrackId = destination.id;
+      }
+      state.selectedClipId = clip.id;
       saveProject().catch(console.error);
       refreshAll();
     } else {
+      state.selectedTrackId = track.id;
+      state.selectedClipId = clip.id;
       showClipMenu(track, clip);
     }
   };
   el.addEventListener('pointerup', finishDrag);
-  el.addEventListener('pointercancel', () => { drag = null; });
+  el.addEventListener('pointercancel', () => { drag = null; el.classList.remove('dragging'); });
 
   return el;
 }
@@ -541,6 +531,13 @@ export function onTransportTick(sec) {
   renderPlayhead(sec);
   const el = document.getElementById('display-time');
   if (el) el.textContent = fmtTime(sec);
+  const indicator = document.getElementById('beat-indicator');
+  if (indicator) {
+    const beatSec = (60 / state.bpm) * (4 / (Number(state.timeSig?.[1]) || 4));
+    const phase = ((Math.max(0, sec) % beatSec) / beatSec);
+    indicator.classList.toggle('lit', phase < 0.22);
+    indicator.setAttribute('aria-label', 'Pulso ' + (Math.floor(sec / beatSec) + 1));
+  }
 }
 
 export function renderPlayhead(sec) {
