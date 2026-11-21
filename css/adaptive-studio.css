@@ -2,7 +2,7 @@
 :root{--motion-fast:140ms;--motion-ui:220ms;--motion-slow:360ms}
 html{scroll-behavior:smooth}
 body{transition:background-color var(--motion-ui) ease,color var(--motion-ui) ease}
-#app{isolation:isolate}
+#app{isolation:isolate;grid-template-rows:var(--topbar-h) 38px minmax(0,1fr) var(--nav-h)}
 .view.active{animation:mt-view-in var(--motion-ui) cubic-bezier(.2,.75,.25,1) both}
 .btn,.nav-btn,.compact-toggle,.tool-tab,.track-header,.clip{transition:background-color var(--motion-fast) ease,border-color var(--motion-fast) ease,color var(--motion-fast) ease,box-shadow var(--motion-fast) ease,transform var(--motion-fast) ease}
 .btn:hover,.nav-btn:hover,.compact-toggle:hover{filter:brightness(1.12)}
