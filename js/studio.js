@@ -35,6 +35,7 @@ function slider(label, min, max, step, value, onInput, unit='') {
   top.append(name,out);
   const input = el('input'); input.type='range'; input.min=min; input.max=max; input.step=step; input.value=value;
   input.addEventListener('input',()=>{ const v=Number(input.value); out.textContent=v.toFixed(step<1?1:0)+unit; onInput(v); });
+  input.addEventListener('change',()=>saveProject().catch(console.error));
   wrap.append(top,input); return wrap;
 }
 function persist(track) { updateChannel(track); saveProject().catch(console.error); }
@@ -52,7 +53,7 @@ export function openChannelEditor(trackId) {
   head.append(heading,close); panel.append(head);
   const body=el('div','channel-editor-body');
   const gainBox=el('section','studio-card'); gainBox.append(el('h3','','INPUT / OUTPUT'));
-  gainBox.append(slider('Input gain',-24,24,.5,track.inputGainDb,v=>{track.inputGainDb=v;persist(track);},' dB'));
+  gainBox.append(slider('Input gain',-12,12,.5,track.inputGainDb,v=>{track.inputGainDb=v;persist(track);},' dB'));
   gainBox.append(slider('Channel volume',0,150,1,(track.volume??1)*100,v=>{track.volume=v/100;updateChannel(track);},'%'));
   gainBox.append(slider('Pan',-1,1,.01,track.pan,v=>{track.pan=v;updateChannel(track);}));
   const eqBox=el('section','studio-card'); eqBox.append(el('h3','','5-BAND PARAMETRIC EQ'));
@@ -157,7 +158,7 @@ export async function connectMidi() {
         const track=findTrack(state.selectedTrackId); if(!track)return;
         if(data1===7){track.volume=(data2/127)*1.5;updateChannel(track);saveProject();}
         if(data1===10){track.pan=(data2/63.5)-1;updateChannel(track);saveProject();}
-        if(data1===64&&data2>=64){track.effects||=[];let fx=track.effects.find(x=>x.type==='reverb');if(!fx){fx={type:'reverb',enabled:true,mix:.3};track.effects.push(fx);}else fx.enabled=!fx.enabled;updateChannel(track);saveProject();}
+        if(data1===64&&data2>=64){track.effects||=[];let fx=track.effects.find(x=>x.type==='reverb');if(!fx){fx={type:'reverb',enabled:data2>=64,mix:.3};track.effects.push(fx);}else fx.enabled=data2>=64;updateChannel(track);saveProject();}
       }
     };
     midiAccess.inputs.forEach(attach);midiAccess.onstatechange=()=>midiAccess.inputs.forEach(attach);
