@@ -1,15 +1,12 @@
 // Entry point — wires UI to modules, boots the app.
 
 import { state, createTrack } from './state.js';
-import { getContext, resume, updateChannel } from './audio-engine.js';
 import * as transport from './transport.js';
 import * as playlist from './playlist.js';
 import { saveProject, loadProject } from './storage.js';
 
-let micGranted = false;
-
 async function boot() {
-  // Restore previous session (metadata only)
+  // Restore previous session, including persisted audio clips
   const hadSaved = await loadProject();
 
   // If nothing saved, seed a demo track
@@ -72,22 +69,6 @@ async function boot() {
       if (target === 'playlist') playlist.refreshAll();
     });
   }
-
-  // Mic gate (triggered on first record attempt)
-  document.getElementById('btn-enable-mic').addEventListener('click', async () => {
-    document.getElementById('mic-gate').classList.add('hidden');
-    micGranted = true;
-    // User already clicked — recording will proceed
-    try {
-      await resume();
-      getContext();
-    } catch (e) {
-      transport.toast('Audio engine failed to start');
-    }
-  });
-  document.getElementById('btn-cancel-mic').addEventListener('click', () => {
-    document.getElementById('mic-gate').classList.add('hidden');
-  });
 
   // Save periodically
   setInterval(saveProject, 10000);
