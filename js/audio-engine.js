@@ -2,7 +2,7 @@
 import { state, isAudible } from './state.js';
 let ctx=null,master=null,metronomeGain=null,clickBuffer=null;
 let activeSources=[];
-const channels=new Map(),voices=new Map();
+const channels=new Map();
 export function getContext(){
  if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;ctx=new AC({latencyHint:'interactive'});master=ctx.createGain();master.gain.value=Number.isFinite(state.masterVolume)?state.masterVolume:.9;master.connect(ctx.destination);metronomeGain=ctx.createGain();metronomeGain.gain.value=.5;metronomeGain.connect(master);clickBuffer=makeClickBuffer(ctx);for(const t of state.tracks)ensureChannel(t.id);}
  return ctx;
