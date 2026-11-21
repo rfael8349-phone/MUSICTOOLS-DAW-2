@@ -85,11 +85,11 @@ export function renderMixer() {
   const input = document.createElement('section');
   input.className = 'mixer-input';
   const title = document.createElement('strong');
-  title.textContent = 'INPUT GAIN · RECORD';
+  title.textContent = 'INPUT GAIN · RECORD (SAFE RANGE)';
   const value = document.createElement('output');
   value.textContent = `${Number(state.inputGainDb || 0).toFixed(1)} dB`;
   const slider = document.createElement('input');
-  slider.type = 'range'; slider.min = '-12'; slider.max = '36'; slider.step = '0.5';
+  slider.type = 'range'; slider.min = '-12'; slider.max = '12'; slider.step = '0.5';
   slider.value = String(state.inputGainDb || 0);
   slider.addEventListener('input', () => {
     state.inputGainDb = Number(slider.value);
@@ -97,7 +97,7 @@ export function renderMixer() {
     saveProject().catch(console.error);
   });
   const hint = document.createElement('small');
-  hint.textContent = 'Ganancia de grabación: -12 a +36 dB. Sube poco a poco y evita saturación.';
+  hint.textContent = 'Ganancia de grabación: -12 a +12 dB. Sube poco a poco y evita saturación.';
   input.append(title, value, slider, hint);
   host.appendChild(input);
 
@@ -148,6 +148,11 @@ export function refreshAll() {
 function renderHeaders() {
   const host = document.getElementById('track-headers');
   host.innerHTML = '';
+  // Keep the track labels aligned with the 24px timeline ruler.
+  const rulerSpacer = document.createElement('div');
+  rulerSpacer.className = 'track-ruler-spacer';
+  rulerSpacer.setAttribute('aria-hidden', 'true');
+  host.appendChild(rulerSpacer);
   for (const track of state.tracks) {
     host.appendChild(renderTrackHeader(track));
   }
@@ -236,7 +241,10 @@ function renderTrackHeader(track) {
 
   el.addEventListener('click', () => {
     state.selectedTrackId = track.id;
+    // Selecting another channel transfers the record-arm target to that channel.
+    for (const t of state.tracks) t.armed = t.id === track.id;
     refreshAll();
+    saveProject();
   });
 
   el.append(color, meta, actions);

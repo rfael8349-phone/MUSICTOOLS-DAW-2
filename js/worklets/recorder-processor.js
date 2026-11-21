@@ -7,7 +7,10 @@ class RecorderProcessor extends AudioWorkletProcessor {
     super();
     this._recording = true;
     this.port.onmessage = (e) => {
-      if (e.data && e.data.cmd === 'stop') this._recording = false;
+      if (e.data && e.data.cmd === 'stop') {
+        this._recording = false;
+        this.port.postMessage({ type: 'stopped' });
+      }
     };
   }
   process(inputs) {

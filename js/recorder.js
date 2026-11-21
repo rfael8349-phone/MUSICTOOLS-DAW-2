@@ -12,6 +12,8 @@ let monitorGain = null;
 let captureGain = null;
 let chunks = [];
 let recording = false;
+let acceptingChunks = false;
+let workletStopResolver = null;
 let sampleRate = 48000;
 
 const WORKLET_URL = new URL('./worklets/recorder-processor.js', import.meta.url);
@@ -44,6 +46,7 @@ export async function startRecording({ monitor = true, inputGainDb = 0 } = {}) {
   sampleRate = ctx.sampleRate;
   chunks = [];
   recording = true;
+  acceptingChunks = true;
 
   sourceNode = ctx.createMediaStreamSource(stream);
 
@@ -55,7 +58,7 @@ export async function startRecording({ monitor = true, inputGainDb = 0 } = {}) {
 
   // Dedicated input gain affects the recorded signal, not the monitor volume.
   captureGain = ctx.createGain();
-  captureGain.gain.value = Math.pow(10, Math.max(-12, Math.min(36, Number(inputGainDb) || 0)) / 20);
+  captureGain.gain.value = Math.pow(10, Math.max(-12, Math.min(12, Number(inputGainDb) || 0)) / 20);
   sourceNode.connect(captureGain);
 
   // capture path
@@ -67,7 +70,8 @@ export async function startRecording({ monitor = true, inputGainDb = 0 } = {}) {
       }
       workletNode = new AudioWorkletNode(ctx, 'recorder-processor', { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1 });
       workletNode.port.onmessage = (e) => {
-        if (recording && e.data instanceof Float32Array) chunks.push(e.data);
+        if (e.data instanceof Float32Array && acceptingChunks) chunks.push(e.data);
+        if (e.data && e.data.type === 'stopped' && workletStopResolver) workletStopResolver();
       };
       captureGain.connect(workletNode);
       return { mode: 'worklet' };
@@ -99,10 +103,17 @@ export function setMonitor(on) {
 export async function stopRecording() {
   recording = false;
   if (workletNode) {
-    try { workletNode.port.postMessage({ cmd: 'stop' }); } catch {}
+    // Drain audio-thread messages before closing the port; otherwise the final blocks can be lost.
+    await new Promise((resolve) => {
+      const timeout = setTimeout(() => { workletStopResolver = null; resolve(); }, 300);
+      workletStopResolver = () => { clearTimeout(timeout); workletStopResolver = null; resolve(); };
+      try { workletNode.port.postMessage({ cmd: 'stop' }); } catch { clearTimeout(timeout); workletStopResolver = null; resolve(); }
+    });
+    acceptingChunks = false;
     try { workletNode.disconnect(); } catch {}
     workletNode = null;
   }
+  acceptingChunks = false;
   if (scriptNode) {
     try { scriptNode.disconnect(); } catch {}
     scriptNode = null;
@@ -159,9 +170,13 @@ export function encodeWav(samples, sr) {
   view.setUint16(34, 16, true);
   writeStr(view, 36, 'data');
   view.setUint32(40, numSamples * 2, true);
+  let peak = 0;
+  for (let i = 0; i < numSamples; i++) peak = Math.max(peak, Math.abs(samples[i]));
+  // Preserve headroom if digital input gain produces samples outside full scale.
+  const scale = peak > 0.98 ? 0.98 / peak : 1;
   let off = 44;
   for (let i = 0; i < numSamples; i++) {
-    const s = Math.max(-1, Math.min(1, samples[i]));
+    const s = Math.max(-1, Math.min(1, samples[i] * scale));
     view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
     off += 2;
   }
