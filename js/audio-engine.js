@@ -31,7 +31,7 @@ function buildFx(ch,track){
  try{ch.compressor.disconnect();}catch{}
  let node=ch.compressor;
  for(const fx of effects){
-  let effect=null;
+  let effect=null,effectOutput=null;
   if(fx.type==='overdrive'||fx.type==='distortion'){
    effect=ctx.createWaveShaper();const curve=new Float32Array(2048),amount=fx.type==='overdrive'?12:35;
    for(let i=0;i<curve.length;i++){const x=i*2/(curve.length-1)-1;curve[i]=(1+amount)*x/(1+amount*Math.abs(x));}effect.curve=curve;effect.oversample='4x';
@@ -44,13 +44,21 @@ function buildFx(ch,track){
    effect.buffer=imp;
   }else if(fx.type==='chorus'){
    effect=ctx.createDelay(.08);effect.delayTime.value=.018;const lfo=ctx.createOscillator(),depth=ctx.createGain();lfo.frequency.value=.8;depth.gain.value=.006;lfo.connect(depth);depth.connect(effect.delayTime);lfo.start();ch.fxNodes.push(lfo,depth);
+  }else if(fx.type==='amp-cab'){
+   effect=ctx.createWaveShaper();const curve=new Float32Array(2048);
+   for(let i=0;i<curve.length;i++){const x=i*2/(curve.length-1)-1;curve[i]=Math.tanh(x*2.4)*.88;}
+   effect.curve=curve;effect.oversample='4x';
+   const cab=ctx.createBiquadFilter();cab.type='lowpass';cab.frequency.value=5200;cab.Q.value=.65;
+   const lowCut=ctx.createBiquadFilter();lowCut.type='highpass';lowCut.frequency.value=75;lowCut.Q.value=.7;
+   effect.connect(cab);cab.connect(lowCut);effectOutput=lowCut;ch.fxNodes.push(cab,lowCut);
   }
   if(effect){
    const dry=ctx.createGain(),wet=ctx.createGain(),sum=ctx.createGain();
    const mix=Math.max(0,Math.min(1,Number(fx.mix??.35)));
    dry.gain.value=1-mix;wet.gain.value=mix;
-   node.connect(dry);node.connect(effect);effect.connect(wet);
+   node.connect(dry);node.connect(effect);if(!effectOutput)effect.connect(wet);
    dry.connect(sum);wet.connect(sum);node=sum;
+   (effectOutput||effect).connect(wet);
    ch.fxNodes.push(effect,dry,wet,sum);
   }
  }
