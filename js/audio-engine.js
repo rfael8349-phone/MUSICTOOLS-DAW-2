@@ -29,7 +29,13 @@ export function getContext() {
   return ctx;
 }
 
-export function setMasterVolume(value) {\n  state.masterVolume = Math.max(0, Math.min(1.5, Number(value) || 0));\n  getContext();\n  master.gain.value = state.masterVolume;\n}\n\nexport function getMasterGain() {
+export function setMasterVolume(value) {
+  state.masterVolume = Math.max(0, Math.min(1.5, Number(value) || 0));
+  getContext();
+  master.gain.value = state.masterVolume;
+}
+
+export function getMasterGain() {
   getContext();
   return master;
 }
