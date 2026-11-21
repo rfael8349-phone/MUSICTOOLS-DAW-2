@@ -14,7 +14,7 @@ export function getContext() {
     const AC = window.AudioContext || window.webkitAudioContext;
     ctx = new AC({ latencyHint: 'interactive' });
     master = ctx.createGain();
-    master.gain.value = 0.9;
+    master.gain.value = Number.isFinite(state.masterVolume) ? state.masterVolume : 0.9;
     master.connect(ctx.destination);
 
     metronomeGain = ctx.createGain();
@@ -29,7 +29,7 @@ export function getContext() {
   return ctx;
 }
 
-export function getMasterGain() {
+export function setMasterVolume(value) {\n  state.masterVolume = Math.max(0, Math.min(1.5, Number(value) || 0));\n  getContext();\n  master.gain.value = state.masterVolume;\n}\n\nexport function getMasterGain() {
   getContext();
   return master;
 }
