@@ -50,7 +50,7 @@ function renderPiano(host){
  const keyboard=node('div','piano-keyboard');
  const whites=14, whiteWidth=100/whites;
  for(let i=0;i<whites;i++){
-  const semis=[0,2,4,5,7,9,11][i%7], note=octave*12+Math.floor(i/7)*12+semis;
+  const semis=[0,2,4,5,7,9,11][i%7], note=(octave+1)*12+Math.floor(i/7)*12+semis;
   const key=node('button','piano-white',noteName(note));key.style.left=(i*whiteWidth)+'%';key.style.width=whiteWidth+'%';
   key.onpointerdown=e=>{e.preventDefault();key.setPointerCapture?.(e.pointerId);key.classList.add('pressed');press(note,'piano:'+i);};
   const off=()=>{key.classList.remove('pressed');release('piano:'+i);};key.onpointerup=off;key.onpointercancel=off;key.onlostpointercapture=off;keyboard.append(key);
@@ -58,12 +58,12 @@ function renderPiano(host){
  // Black keys positioned between the appropriate white keys, as on a conventional piano.
  const blackAfter=[0,1,3,4,5];let whiteBefore=0;
  for(let oct=0;oct<2;oct++)for(const sem of blackAfter){
-  const idx=oct*7+sem;const note=octave*12+oct*12+[1,3,6,8,10][blackAfter.indexOf(sem)];
+  const idx=oct*7+sem;const note=(octave+1)*12+oct*12+[1,3,6,8,10][blackAfter.indexOf(sem)];
   const key=node('button','piano-black',noteName(note));key.style.left=((idx+1)*whiteWidth-whiteWidth*.31)+'%';key.style.width=(whiteWidth*.62)+'%';
   const id='black:'+oct+':'+sem;key.onpointerdown=e=>{e.preventDefault();key.setPointerCapture?.(e.pointerId);key.classList.add('pressed');press(note,id);};const off=()=>{key.classList.remove('pressed');release(id);};key.onpointerup=off;key.onpointercancel=off;key.onlostpointercapture=off;keyboard.append(key);
  }
  host.append(keyboard);
- const legend=node('div','creative-footnote','Piano multisample · 2 octavas · polifonía · sonidos grabados CC0');host.append(legend);
+ const legend=node('div','creative-footnote','Piano y guitarras con muestras grabadas · 2 octavas · polifonía · banco CC0');host.append(legend);
  if(qwerty){const hint=node('p','studio-note','QWERTY opcional: A W S E D F T G Y H U J K O L P.');host.append(hint);}
 }
 function renderMidiEditor(){
@@ -117,7 +117,7 @@ export function mountCreative(){
  const drums=$('view-drummachine');if(drums){drums.replaceChildren();const wrap=node('section','creative-view');wrap.append(node('h2','creative-heading','DRUM STUDIO / STEP SEQUENCER'));const host=node('div','creative-instrument');wrap.append(host);drums.append(wrap);renderDrums(host);}
  const menu=$('btn-menu');if(menu&&!$('theme-picker')){const picker=renderThemes();picker.id='theme-picker';document.querySelector('.top-actions').append(picker);}
  theme=localStorage.getItem('musictool-theme')||'xp';document.documentElement.dataset.theme=theme;const sel=$('theme-picker')?.querySelector('select');if(sel)sel.value=theme;
- window.addEventListener('keydown',e=>{if(!qwerty||!$('view-pianoroll')?.classList.contains('active')||e.repeat||/INPUT|SELECT|TEXTAREA/.test(e.target?.tagName||''))return;const k=e.key.toLowerCase();if(keyMap[k]!==undefined){e.preventDefault();press(octave*12+keyMap[k],'qwerty:'+k);}});
+ window.addEventListener('keydown',e=>{if(!qwerty||!$('view-pianoroll')?.classList.contains('active')||e.repeat||/INPUT|SELECT|TEXTAREA/.test(e.target?.tagName||''))return;const k=e.key.toLowerCase();if(keyMap[k]!==undefined){e.preventDefault();press((octave+1)*12+keyMap[k],'qwerty:'+k);}});
  window.addEventListener('keyup',e=>release('qwerty:'+e.key.toLowerCase()));
  window.addEventListener('blur',()=>{for(const k of held.keys())release(k);});
 }
