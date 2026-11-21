@@ -15,7 +15,7 @@ export async function mountSamples() {
   mounted = true;
   try {
     const saved=await listSampleAssets();
-    for(const item of saved){try{const buffer=await decodeAudio(await item.blob.arrayBuffer());samples.push({id:item.id,name:item.name,blob:item.blob,buffer,trimStart:0,trimEnd:buffer.duration});}catch(error){console.warn('No se pudo restaurar sample',item.name,error);}}
+    for(const item of saved){try{const buffer=await decodeAudio(await item.blob.arrayBuffer());samples.push({id:item.id,name:item.name,blob:item.blob,buffer,trimStart:Math.max(0,Math.min(buffer.duration-.02,Number(item.trimStart)||0)),trimEnd:Math.max(.02,Math.min(buffer.duration,Number(item.trimEnd)||buffer.duration))});}catch(error){console.warn('No se pudo restaurar sample',item.name,error);}}
   } catch(error){console.warn('Biblioteca local no disponible',error);}
   picker.addEventListener('change', async () => {
     const files = Array.from(picker.files || []);
@@ -77,7 +77,9 @@ function renderSamples() {
     const endLabel=document.createElement('label');endLabel.textContent='FINAL '+sample.trimEnd.toFixed(2)+' s';
     const end=document.createElement('input');end.type='range';end.min=String(Math.min(sample.buffer.duration,.02));end.max=String(sample.buffer.duration);end.step='.01';end.value=String(sample.trimEnd);
     start.addEventListener('input',()=>{sample.trimStart=Math.min(Number(start.value),sample.trimEnd-.02);startLabel.firstChild.textContent='INICIO '+sample.trimStart.toFixed(2)+' s';duration.textContent=(sample.trimEnd-sample.trimStart).toFixed(2)+' s seleccionados / '+sample.buffer.duration.toFixed(2)+' s';});
+    start.addEventListener('change',()=>saveSampleAsset(sample.id,sample.name,sample.blob,sample.trimStart,sample.trimEnd).catch(()=>toast('No se pudo guardar el recorte')));
     end.addEventListener('input',()=>{sample.trimEnd=Math.max(Number(end.value),sample.trimStart+.02);endLabel.firstChild.textContent='FINAL '+sample.trimEnd.toFixed(2)+' s';duration.textContent=(sample.trimEnd-sample.trimStart).toFixed(2)+' s seleccionados / '+sample.buffer.duration.toFixed(2)+' s';});
+    end.addEventListener('change',()=>saveSampleAsset(sample.id,sample.name,sample.blob,sample.trimStart,sample.trimEnd).catch(()=>toast('No se pudo guardar el recorte')));
     startLabel.append(start);endLabel.append(end);trim.append(startLabel,endLabel);row.append(trim);
     host.appendChild(row);
   }
