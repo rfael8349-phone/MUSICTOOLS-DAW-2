@@ -190,8 +190,6 @@ const bassMap=[40,45,50,55].map(note=>{const root=bassRoots.find(x=>x[0]===note)
 const drumSamples={
  kick:sample(DRUM,'Kicks/Kick%20Acoustic.flac'),
  kickBig:sample(DRUM,'Kicks/Kick%20Acoustic%20Big.flac'),
- kickDeep:sample(DRUM,'Kicks/Kick%20Deep.flac'),
- kickPunch:sample(DRUM,'Kicks/Kick%20Punchy.flac'),
  rim:sample(DRUM,'Snares/Rim%20Side%20Stick.flac'),
  snare:sample(DRUM,'Snares/Snare%20Acoustic.flac'),
  snareRim:sample(DRUM,'Snares/Snare%20Rimshot.flac'),
@@ -204,19 +202,19 @@ const drumSamples={
  tomLow:sample(DRUM,'Toms/Tom%20Low.flac'),
  tomHigh:sample(DRUM,'Toms/Tom%20High.flac'),
  crash:sample(DRUM,'Cymbals/Crash.flac'),
- crashElectronic:sample(DRUM,'Cymbals/Crash%20Electronic.flac'),
  ride:sample(DRUM,'Cymbals/Ride.flac'),
  rideBell:sample(DRUM,'Cymbals/Ride%20Bell.flac'),
  tambourine:sample(DRUM,'Percussion/Tambourine.flac'),
- cowbell:sample(DRUM,'Percussion/Cowbell%20Analog.flac')
+ rideBell:sample(DRUM,'Cymbals/Ride%20Bell.flac'),
+ tambourine:sample(DRUM,'Percussion/Tambourine.flac')
 };
 const drumMap={
  35:'kick',36:'kickBig',37:'rim',38:'snare',39:'clap',40:'snareRim',41:'tomFloor',
- 42:'hat',43:'kickDeep',44:'hatPedal',45:'tomFloor',46:'hatOpen',47:'tomLow',48:'tomHigh',
- 49:'crash',50:'tomHigh',51:'ride',52:'crashElectronic',53:'rideBell',54:'tambourine',55:'cowbell',
+ 42:'hat',43:'kick',44:'hatPedal',45:'tomFloor',46:'hatOpen',47:'tomLow',48:'tomHigh',
+ 49:'crash',50:'tomHigh',51:'ride',52:'crash',53:'rideBell',54:'tambourine',55:'rideBell',
  56:'rideBell',57:'crashElectronic'
 };
-const padOrder=['kickBig','snare','clap','hat','hatOpen','tomFloor','tomLow','tomHigh','crash','ride','rim','kickPunch','kickDeep','snareRim','crashElectronic','rideBell'];
+const padOrder=['kickBig','snare','clap','hat','hatOpen','tomFloor','tomLow','tomHigh','crash','ride','rim','kick','snareRim','snareTight','hatPedal','rideBell'];
 function nearestMap(map,note){
  let best=map[0];for(const entry of map)if(Math.abs(entry[0]-note)<Math.abs(best[0]-note))best=entry;
  return {rootNote:best[0],url:best[1]};
