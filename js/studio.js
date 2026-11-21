@@ -9,7 +9,7 @@ let activeEditorTrackId = null;
 let midiAccess = null;
 let keyboardModes = { piano:'piano', drums:'drums' };
 let qwertyEnabled = false;
-let instrumentTone = 'synth';
+let instrumentTone = 'piano';
 let activeInstrumentView = 'piano';
 let octave = 4;
 let rootNote = 0;
@@ -140,7 +140,7 @@ function renderInstrumentPanel(host, mode) {
   Object.keys(scaleIntervals).forEach(s=>{const o=el('option','',s.toUpperCase());o.value=s;o.selected=s===scaleName;scaleSel.append(o);});
   scaleSel.onchange=()=>scaleName=scaleSel.value;
   const toneSel=el('select','studio-select');
-  [['synth','SYNTH'],['guitar','GUITAR TONE'],['bass','BASS TONE']].forEach(([v,l])=>{const o=el('option','',l);o.value=v;o.selected=v===instrumentTone;toneSel.append(o);});
+  [['piano','PIANO'],['guitar','GUITAR'],['bass','BASS'],['synth','SYNTH PAD']].forEach(([v,l])=>{const o=el('option','',l);o.value=v;o.selected=v===instrumentTone;toneSel.append(o);});
   toneSel.onchange=()=>instrumentTone=toneSel.value;
   const qwerty=el('button','btn'+(qwertyEnabled?' accent':''),qwertyEnabled?'QWERTY ON':'QWERTY OFF');
   qwerty.onclick=()=>{qwertyEnabled=!qwertyEnabled;renderInstrumentPanel(host,mode);};
