@@ -133,7 +133,7 @@ async function boot() {
   // Save in the background; storage failures must not break the controls.
   setInterval(() => saveProject().catch(showBootError), 10000);
   transport.toast(hadSaved ? 'Project restored' : 'MUSICTOOL ready');
-  preloadInstrumentSamples().then(({ready,total})=>console.info('MUSICTOOL audio bank ready',ready+'/'+total)).catch(err=>console.warn('Sample preload:',err));
+  preloadInstrumentSamples().then(({ready,total})=>{console.info('MUSICTOOL audio bank ready',ready+'/'+total);transport.toast(ready===total?'Banco de instrumentos listo · muestras guardadas':'Banco parcial '+ready+'/'+total+' · conecta internet y recarga');}).catch(err=>{console.warn('Sample preload:',err);transport.toast('No se pudo descargar el banco de sonidos');});
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js?v=7.2.0',{updateViaCache:'none'}).catch((err) => console.warn('Service worker:', err));
