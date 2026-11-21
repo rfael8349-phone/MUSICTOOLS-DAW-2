@@ -76,7 +76,7 @@ export function removeChannel(trackId) {
 
 export function updateChannel(track) {
   const ch = ensureChannel(track.id);
-  ch.gain.gain.value = track.volume;
+  ch.gain.gain.value = isAudible(track) ? track.volume : 0;
   if (ch.panner) ch.panner.pan.value = track.pan;
 }
 
