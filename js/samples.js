@@ -10,7 +10,8 @@ let previewSource = null;\nlet mounted = false;
 
 export function mountSamples() {
   const picker = document.getElementById('sample-file');
-  if (!picker) return;
+  if (!picker || mounted) return;
+  mounted = true;
   picker.addEventListener('change', async () => {
     const files = Array.from(picker.files || []);
     for (const file of files) {
