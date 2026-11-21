@@ -3,7 +3,7 @@
 
 import { state, createTrack, newId, findTrack, removeTrack, removeClip, addClip, songDuration } from './state.js';
 import { fmtTime } from './transport.js';
-import { updateChannel, ensureChannel, computePeaks } from './audio-engine.js';
+import { updateChannel, ensureChannel, computePeaks, setMasterVolume } from './audio-engine.js';
 import { saveProject } from './storage.js';
 import { toast } from './transport.js';
 
