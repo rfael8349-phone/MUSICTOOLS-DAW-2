@@ -6,6 +6,7 @@ import { saveProject, loadProject } from './storage.js';
 import { resume } from './audio-engine.js';
 import { mountSamples } from './samples.js';
 import { mountStudio, setInstrumentView } from './studio.js';
+import { mountCreative } from './creative.js';
 
 const byId = (id) => document.getElementById(id);
 
@@ -113,6 +114,7 @@ async function boot() {
     syncUI();
     playlist.mount();
     mountStudio();
+    mountCreative();
     playlist.renderMixer();
   } catch (err) {
     showBootError(err);
@@ -123,7 +125,7 @@ async function boot() {
   transport.toast(hadSaved ? 'Project restored' : 'MUSICTOOL ready');
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js?v=6.2.2',{updateViaCache:'none'}).catch((err) => console.warn('Service worker:', err));
+    navigator.serviceWorker.register('service-worker.js?v=7.0.0',{updateViaCache:'none'}).catch((err) => console.warn('Service worker:', err));
   }
 }
 
