@@ -369,3 +369,38 @@
   .track-header { height: 44px; }
   .track-lane { height: 44px; }
 }
+
+/* ---------- V5.2 MIXER + CLIP EDITOR ---------- */
+.mixer-strips { align-items: stretch; flex-wrap: wrap; }
+.mixer-input, .mixer-strip {
+  display: flex; flex-direction: column; gap: 9px;
+  min-width: 190px; padding: 14px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+}
+.mixer-input { flex: 1 1 100%; max-width: 520px; }
+.mixer-strip { flex: 0 0 150px; }
+.mixer-input strong, .mixer-strip strong { color: var(--cream); font-size: 12px; }
+.mixer-input output, .mixer-strip output { color: var(--cyan); font-family: var(--font-mono); font-size: 12px; }
+.mixer-input small { color: var(--text-dim); line-height: 1.4; }
+.mixer-input input, .mixer-strip input { width: 100%; accent-color: var(--red); }
+.mixer-strip label { color: var(--text-dim); font-size: 10px; }
+.clip-menu-backdrop {
+  position: fixed; inset: 0; z-index: 3000;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 12px; background: rgba(0,0,0,.58);
+}
+.clip-menu {
+  width: min(100%, 440px); padding: 16px;
+  background: var(--panel-2); border: 1px solid var(--border-hi);
+  border-radius: 12px 12px 8px 8px; box-shadow: 0 12px 40px rgba(0,0,0,.65);
+}
+.clip-menu > strong { display: block; color: var(--cream); margin-bottom: 12px; }
+.clip-menu-actions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.clip-menu-actions button {
+  min-height: 42px; padding: 8px;
+  color: var(--text); background: var(--bg-3);
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: 12px; touch-action: manipulation;
+}
+.clip-menu-actions button:active { border-color: var(--red); background: var(--bg); }
