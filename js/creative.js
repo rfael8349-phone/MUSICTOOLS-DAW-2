@@ -1,7 +1,7 @@
 // MUSICTOOL DAW V7.0 — Creative Studio
 import { state, createTrack } from './state.js';
 import { refreshAll } from './playlist.js';
-import { playInstrumentNote, stopInstrumentNote, resume, preloadInstrumentSamples } from './audio-engine.js';
+import { playInstrumentNote, stopInstrumentNote, resume } from './audio-engine.js';
 import { saveProject } from './storage.js';
 import { toast } from './transport.js';
 
