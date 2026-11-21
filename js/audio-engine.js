@@ -14,8 +14,9 @@ function makeChannel(trackId){
  const input=ctx.createGain(),filters=[80,250,1000,4000,10000].map((freq)=>{const f=ctx.createBiquadFilter();f.type='peaking';f.frequency.value=freq;f.Q.value=.85;return f;});
  const compressor=ctx.createDynamicsCompressor();compressor.threshold.value=-18;compressor.knee.value=18;compressor.ratio.value=3;compressor.attack.value=.008;compressor.release.value=.18;
  const panner=ctx.createStereoPanner?ctx.createStereoPanner():null;
- const ch={gain:input,filters,compressor,panner,fxNodes:[],fxSignature:''};
- let node=input;for(const f of filters){node.connect(f);node=f;}node.connect(compressor);node=compressor;if(panner){node.connect(panner);panner.connect(master);}else node.connect(master);
+ const analyser=ctx.createAnalyser();analyser.fftSize=256;
+ const ch={gain:input,filters,compressor,panner,analyser,fxNodes:[],fxSignature:''};
+ let node=input;for(const f of filters){node.connect(f);node=f;}node.connect(compressor);node=compressor;if(panner){node.connect(panner);panner.connect(analyser);}else node.connect(analyser);analyser.connect(master);
  channels.set(trackId,ch);return ch;
 }
 export function ensureChannel(trackId){getContext();return channels.get(trackId)||makeChannel(trackId);}
@@ -25,7 +26,7 @@ function buildFx(ch,track){
  if(signature===ch.fxSignature)return;
  for(const n of ch.fxNodes){try{n.disconnect();}catch{}try{if(typeof n.stop==='function')n.stop();}catch{}}
  ch.fxNodes=[];
- const tail=ch.panner||master;
+ const tail=ch.panner||ch.analyser;
  // Rewire compressor through the enabled effect chain to the channel output.
  try{ch.compressor.disconnect();}catch{}
  if(ch.panner)try{ch.panner.disconnect();}catch{}
@@ -65,7 +66,8 @@ export function updateChannel(track){
  if(track.compressor?.enabled){ch.compressor.threshold.value=Number(track.compressor.threshold??-18);ch.compressor.ratio.value=Number(track.compressor.ratio??3);}else{ch.compressor.threshold.value=0;ch.compressor.ratio.value=1;}
  buildFx(ch,track);
 }
-export function removeChannel(trackId){const ch=channels.get(trackId);if(ch){for(const n of [ch.gain,...ch.filters,ch.compressor,ch.panner,...ch.fxNodes])if(n)try{n.disconnect();}catch{}channels.delete(trackId);}}
+export function getChannelLevel(trackId){const ch=channels.get(trackId);if(!ch)return 0;const data=new Uint8Array(ch.analyser.fftSize);ch.analyser.getByteTimeDomainData(data);let sum=0;for(const v of data){const x=(v-128)/128;sum+=x*x;}return Math.min(1,Math.sqrt(sum/data.length)*3.2);}
+export function removeChannel(trackId){const ch=channels.get(trackId);if(ch){for(const n of [ch.gain,...ch.filters,ch.compressor,ch.panner,ch.analyser,...ch.fxNodes])if(n)try{n.disconnect();}catch{}channels.delete(trackId);}}
 export function playClick(when,accent=false){getContext();const src=ctx.createBufferSource();src.buffer=clickBuffer;const g=ctx.createGain();g.gain.value=accent?1:.6;src.connect(g);g.connect(metronomeGain);src.start(when);}
 function makeClickBuffer(c){const dur=.05,sr=c.sampleRate,b=c.createBuffer(1,Math.floor(sr*dur),sr),d=b.getChannelData(0);for(let i=0;i<d.length;i++){const t=i/sr;d[i]=Math.sin(2*Math.PI*1000*t)*Math.exp(-t*60);}return b;}
 export function schedulePlayback(fromSec,windowSec=30){getContext();stopAll();const t0=ctx.currentTime+.05;for(const track of state.tracks){if(!isAudible(track))continue;const ch=ensureChannel(track.id);updateChannel(track);for(const clip of track.clips){if(clip.startSec+clip.lengthSec<=fromSec||clip.startSec>=fromSec+windowSec)continue;scheduleClip(track,clip,ch,fromSec,t0);}}}
