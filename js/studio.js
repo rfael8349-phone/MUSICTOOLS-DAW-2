@@ -166,7 +166,9 @@ export async function connectMidi() {
         const track=findTrack(state.selectedTrackId); if(!track)return;
         if(data1===7){track.volume=(data2/127)*1.5;updateChannel(track);saveProject();}
         if(data1===10){track.pan=(data2/63.5)-1;updateChannel(track);saveProject();}
-        if(data1===64&&data2>=64){track.effects||=[];let fx=track.effects.find(x=>x.type==='reverb');if(!fx){fx={type:'reverb',enabled:data2>=64,mix:.3};track.effects.push(fx);}else fx.enabled=data2>=64;updateChannel(track);saveProject();}
+        if(data1===64){track.effects||=[];let fx=track.effects.find(x=>x.type==='reverb');if(!fx){fx={type:'reverb',enabled:data2>=64,mix:.3};track.effects.push(fx);}else fx.enabled=data2>=64;updateChannel(track);saveProject();}
+        if(data1===11){track.effects||=[];let fx=track.effects.find(x=>x.type==='delay');if(!fx){fx={type:'delay',enabled:data2>0,mix:data2/127};track.effects.push(fx);}else{fx.mix=data2/127;fx.enabled=data2>0;}updateChannel(track);saveProject();}
+        if(data1===1){track.effects||=[];let fx=track.effects.find(x=>x.type==='chorus');if(!fx){fx={type:'chorus',enabled:data2>0,mix:data2/127};track.effects.push(fx);}else{fx.mix=data2/127;fx.enabled=data2>0;}updateChannel(track);saveProject();}
       }
     };};
     midiAccess.inputs.forEach(attach);midiAccess.onstatechange=()=>midiAccess.inputs.forEach(attach);
