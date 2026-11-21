@@ -284,7 +284,7 @@
 /* ---------- BOTTOM NAV ---------- */
 #bottomnav {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   background: linear-gradient(180deg, var(--bg-2) 0%, #0a0a12 100%);
   border-top: 1px solid var(--border);
 }
@@ -304,7 +304,7 @@
   border-top: 2px solid transparent;
   transition: color 0.1s, border-color 0.1s;
 }
-.nav-btn .nav-icon { font-size: 18px; line-height: 1; }
+.nav-btn .nav-icon { font-size: 17px; line-height: 1; }\n.nav-btn .nav-label { font-size: 8px; white-space: nowrap; }\n.playlist-toolbar { min-height: 46px; justify-content: flex-start; }\n.playlist-toolbar > * { flex-shrink: 0; }\n.samples-panel { height: 100%; overflow-y: auto; }\n.sample-import-label { display: inline-flex; align-items: center; justify-content: center; margin: 8px 0 14px; cursor: pointer; }\n.sample-list { display: grid; gap: 8px; }\n.sample-row { display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-2); }\n.sample-info { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; }\n.sample-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--cream); }\n.sample-info small { font-size: 10px; color: var(--text-dim); }\n@media (max-width: 560px) { .nav-btn { padding-left: 0; padding-right: 0; } .nav-btn .nav-label { font-size: 7px; letter-spacing: 0; } }
 .nav-btn.active {
   color: var(--cream);
   border-top-color: var(--red);
