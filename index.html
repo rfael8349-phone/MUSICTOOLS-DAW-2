@@ -79,6 +79,17 @@
       </div>
     </section>
 
+    <!-- SAMPLES -->
+    <section class="view" id="view-samples" data-view="samples">
+      <div class="placeholder-panel samples-panel">
+        <h2>SAMPLES</h2>
+        <p class="muted">Importa audio desde Archivos, escúchalo y añádelo a una pista.</p>
+        <label class="btn accent sample-import-label" for="sample-file">＋ IMPORTAR AUDIO</label>
+        <input id="sample-file" type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" multiple hidden />
+        <div id="sample-list" class="sample-list"><p class="muted">Todavía no hay samples importados.</p></div>
+      </div>
+    </section>
+
     <!-- PIANO ROLL -->
     <section class="view" id="view-pianoroll" data-view="pianoroll">
       <div class="placeholder-panel">
@@ -113,6 +124,7 @@
     <button class="nav-btn" data-target="mixer">
       <span class="nav-icon">▥</span><span class="nav-label">MIXER</span>
     </button>
+    <button class="nav-btn" data-target="samples"><span class="nav-icon">♫</span><span class="nav-label">SAMPLES</span></button>
     <button class="nav-btn" data-target="pianoroll">
       <span class="nav-icon">♬</span><span class="nav-label">PIANO</span>
     </button>
