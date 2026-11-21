@@ -1,6 +1,6 @@
 // MUSICTOOL DAW V6 — channel console, MIDI input and playable computer keyboard.
 import { state, findTrack } from './state.js';
-import { updateChannel, playInstrumentNote, stopInstrumentNote, resume, getChannelLevel } from './audio-engine.js';
+import { updateChannel, playInstrumentNote, stopInstrumentNote, resume, getChannelLevel, preloadInstrumentSamples } from './audio-engine.js';
 import { saveProject } from './storage.js';
 import { toast } from './transport.js';
 
@@ -139,9 +139,9 @@ const scaleIntervals={
   pentatonic:[0,3,5,7,10], blues:[0,3,5,6,7,10]
 };
 function quantizedNote(index) {
-  if(scaleName==='chromatic')return octave*12+rootNote+index;
+  if(scaleName==='chromatic')return (octave+1)*12+rootNote+index;
   const scale=scaleIntervals[scaleName]; const oct=Math.floor(index/scale.length);
-  return octave*12+rootNote+oct*12+scale[((index%scale.length)+scale.length)%scale.length];
+  return (octave+1)*12+rootNote+oct*12+scale[((index%scale.length)+scale.length)%scale.length];
 }
 function noteOn(key,index,velocity=0.8) {
   if(held.has(key))return;
@@ -166,9 +166,11 @@ function renderInstrumentPanel(host, mode) {
   const toneSel=el('select','studio-select');
   [['piano','PIANO'],['guitar','GUITARRA ELÉCTRICA'],['acoustic','GUITARRA ACÚSTICA'],['bass','BAJO'],['synth','SYNTH PAD']].forEach(([v,l])=>{const o=el('option','',l);o.value=v;o.selected=v===instrumentTone;toneSel.append(o);});
   toneSel.onchange=()=>instrumentTone=toneSel.value;
-  const qwerty=el('button','btn'+(qwertyEnabled?' accent':''),qwertyEnabled?'QWERTY ON':'QWERTY OFF');
+  const qwerty=el('button','compact-toggle'+(qwertyEnabled?' active':''),'⌨');
+  qwerty.type='button';qwerty.title=qwertyEnabled?'Desactivar teclado QWERTY':'Activar teclado QWERTY';qwerty.setAttribute('aria-label',qwerty.title);qwerty.setAttribute('aria-pressed',String(qwertyEnabled));
   qwerty.onclick=()=>{qwertyEnabled=!qwertyEnabled;renderInstrumentPanel(host,mode);};
-  const midi=el('button','btn','CONNECT MIDI');midi.onclick=connectMidi;
+  const midi=el('button','compact-toggle'+(midiAccess?' active':''),'MIDI');midi.type='button';midi.title=midiAccess?'Desconectar controlador MIDI':'Conectar controlador MIDI';midi.setAttribute('aria-label',midi.title);midi.setAttribute('aria-pressed',String(!!midiAccess));
+  midi.onclick=async()=>{if(midiAccess){midiAccess.inputs.forEach(input=>input.onmidimessage=null);midiAccess=null;renderInstrumentPanel(host,mode);toast('Controlador MIDI desconectado');}else{await connectMidi();renderInstrumentPanel(host,mode);}};
   bar.append(el('span','instrument-caption','INSTRUMENT'),toneSel,rootSel,scaleSel,qwerty,midi);
   host.append(bar);
   if(selectedMode==='piano'){
@@ -179,7 +181,7 @@ function renderInstrumentPanel(host, mode) {
     octaveBar.append(label,lower,el('span','instrument-caption','OCT '+octave),upper);host.append(octaveBar);
     const keys=el('div','touch-piano');
     for(let i=0;i<24;i++){
-      const note=octave*12+rootNote+i;
+      const note=(octave+1)*12+rootNote+i;
       const pc=(note%12), black=[1,3,6,8,10].includes(pc);
       const key=el('button','piano-key'+(black?' black-key':''),roots[pc]);
       key.setAttribute('aria-label','Nota '+roots[pc]+' octava '+Math.floor(note/12));
@@ -205,11 +207,12 @@ function renderInstrumentPanel(host, mode) {
       p.onpointerup=()=>noteOff('pad'+i);p.onpointercancel=p.onpointerup;p.onpointerleave=p.onpointerup;pads.append(p);
     }
     host.append(pads);
-    if(selectedMode==='drums')host.append(el('p','studio-note','Kit de 16 pads con voces sintetizadas. Para batería acústica realista añadiremos un banco de samples con licencia verificable; no se incluyen MP3 de terceros sin permiso.'));
+    if(selectedMode==='drums')host.append(el('p','studio-note','Kit de 16 pads con grabaciones de batería y percusión CC0. Los sonidos se descargan y guardan en caché para reproducirse después sin conexión.'));
   }
 }
 export function setInstrumentView(target) { activeInstrumentView = target === 'drummachine' ? 'drums' : 'piano'; }
 export function mountStudio() {
+  preloadInstrumentSamples();
   const piano=$('view-pianoroll');if(piano){piano.replaceChildren(el('h2','','PIANO ROLL / VIRTUAL KEYBOARD'));const p=el('p','muted','Toca notas con el teclado del ordenador, la pantalla o un controlador MIDI. Selecciona tonalidad y escala.');const host=el('div','instrument-panel');piano.append(p,host);renderInstrumentPanel(host,'piano');}
   const drums=$('view-drummachine');if(drums){drums.replaceChildren(el('h2','','DRUM MACHINE / LAUNCHPAD'));const p=el('p','muted','Pads de percusión y disparo de sonidos desde teclado físico o pantalla.');const host=el('div','instrument-panel');drums.append(p,host);renderInstrumentPanel(host,'drums');}
   window.addEventListener('keydown',e=>{
@@ -225,7 +228,7 @@ export async function connectMidi() {
     midiAccess=await navigator.requestMIDIAccess();
     const attach=input=>{input.onmidimessage=ev=>{
       const [status,data1,data2]=ev.data,cmd=status&0xf0;
-      if(cmd===0x90&&data2>0){resume();playInstrumentNote('synth',data1,data2/127);}
+      if(cmd===0x90&&data2>0){resume();playInstrumentNote(instrumentTone,data1,data2/127);}
       else if(cmd===0x80||(cmd===0x90&&data2===0)){stopInstrumentNote(data1);}
       else if(cmd===0xb0){
         const track=findTrack(state.selectedTrackId); if(!track)return;
