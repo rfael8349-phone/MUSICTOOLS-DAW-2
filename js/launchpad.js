@@ -19,6 +19,6 @@ export function mountLaunchpad(){
  const grid=document.createElement('div');grid.className='launchpad-grid';
  function draw(){grid.replaceChildren();banks[select.value].forEach(([name,note],i)=>{const b=document.createElement('button');b.type='button';b.className='launchpad-pad';b.textContent=name;b.style.setProperty('--pad-hue',String((i*23+12)%360));const hit=()=>{resume();playInstrumentNote('drum',note,Number(vel.value));b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),100);};b.addEventListener('pointerdown',e=>{e.preventDefault();hit();});b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();hit();}});grid.append(b);});}
  select.addEventListener('change',draw);draw();
- const note=document.createElement('p');note.className='creative-footnote';note.textContent='Bancos de percusión sintetizada integrados y disponibles sin conexión. Son sonidos generados por el motor, no paquetes de samples acústicos.';
+ const note=document.createElement('p');note.className='creative-footnote';note.textContent='Banco de percusión con muestras grabadas CC0. Se guarda en caché para seguir funcionando sin conexión tras la primera carga.';
  wrap.append(heading,bar,grid,note);host.append(wrap);
 }
