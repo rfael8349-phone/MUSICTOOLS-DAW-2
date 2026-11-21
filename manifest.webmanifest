@@ -1,7 +1,7 @@
 {
-  "name": "MUSICTOOL DAW V5",
-  "short_name": "MUSICTOOL",
-  "description": "Mobile-first multitrack audio workstation.",
+  "name": "MUSICTOOL DAW V6.1",
+  "short_name": "MUSICTOOL V6.1",
+  "description": "MUSICTOOL DAW V6.1 — Windows XP-inspired multitrack audio workstation.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
