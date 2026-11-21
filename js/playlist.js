@@ -151,8 +151,9 @@ export function renderMixer() {
       makeToggle('M', track.mute, 'Silenciar canal', () => { track.mute = !track.mute; }),
       makeToggle('S', track.solo, 'Solo de canal', () => { track.solo = !track.solo; }),
       makeToggle('●', track.armed, 'Preparar para grabación', () => {
+        const wasArmed = track.armed;
         for (const item of state.tracks) item.armed = false;
-        track.armed = true;
+        track.armed = !wasArmed;
       })
     );
 
