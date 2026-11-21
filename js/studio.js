@@ -1,6 +1,6 @@
 // MUSICTOOL DAW V6 — channel console, MIDI input and playable computer keyboard.
 import { state, findTrack } from './state.js';
-import { updateChannel, playInstrumentNote, stopInstrumentNote, resume, getChannelLevel, preloadInstrumentSamples } from './audio-engine.js';
+import { updateChannel, playInstrumentNote, stopInstrumentNote, resume, getChannelLevel } from './audio-engine.js';
 import { saveProject } from './storage.js';
 import { toast } from './transport.js';
 
@@ -212,7 +212,6 @@ function renderInstrumentPanel(host, mode) {
 }
 export function setInstrumentView(target) { activeInstrumentView = target === 'drummachine' ? 'drums' : 'piano'; }
 export function mountStudio() {
-  preloadInstrumentSamples();
   const piano=$('view-pianoroll');if(piano){piano.replaceChildren(el('h2','','PIANO ROLL / VIRTUAL KEYBOARD'));const p=el('p','muted','Toca notas con el teclado del ordenador, la pantalla o un controlador MIDI. Selecciona tonalidad y escala.');const host=el('div','instrument-panel');piano.append(p,host);renderInstrumentPanel(host,'piano');}
   const drums=$('view-drummachine');if(drums){drums.replaceChildren(el('h2','','DRUM MACHINE / LAUNCHPAD'));const p=el('p','muted','Pads de percusión y disparo de sonidos desde teclado físico o pantalla.');const host=el('div','instrument-panel');drums.append(p,host);renderInstrumentPanel(host,'drums');}
   window.addEventListener('keydown',e=>{
