@@ -101,6 +101,26 @@ export function renderMixer() {
   input.append(title, value, slider, hint);
   host.appendChild(input);
 
+  const master = document.createElement('section');
+  master.className = 'mixer-input';
+  const masterTitle = document.createElement('strong');
+  masterTitle.textContent = 'MASTER OUTPUT';
+  const masterValue = document.createElement('output');
+  masterValue.textContent = Math.round((state.masterVolume ?? 0.9) * 100) + '%';
+  const masterSlider = document.createElement('input');
+  masterSlider.type = 'range';
+  masterSlider.min = '0';
+  masterSlider.max = '1.5';
+  masterSlider.step = '0.01';
+  masterSlider.value = String(state.masterVolume ?? 0.9);
+  masterSlider.addEventListener('input', () => {
+    setMasterVolume(masterSlider.value);
+    masterValue.textContent = Math.round(state.masterVolume * 100) + '%';
+  });
+  masterSlider.addEventListener('change', () => saveProject().catch(console.error));
+  master.append(masterTitle, masterValue, masterSlider);
+  host.appendChild(master);
+
   for (const track of state.tracks) {
     updateChannel(track);
     const strip = document.createElement('section');
