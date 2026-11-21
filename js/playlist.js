@@ -241,7 +241,10 @@ function renderTrackHeader(track) {
 
   el.addEventListener('click', () => {
     state.selectedTrackId = track.id;
+    // Selecting another channel transfers the record-arm target to that channel.
+    for (const t of state.tracks) t.armed = t.id === track.id;
     refreshAll();
+    saveProject();
   });
 
   el.append(color, meta, actions);
