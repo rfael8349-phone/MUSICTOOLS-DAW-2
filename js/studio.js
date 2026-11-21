@@ -57,6 +57,26 @@ export function openChannelEditor(trackId) {
   const close=el('button','btn','✕'); close.type='button'; close.onclick=()=>modal.classList.remove('open');
   head.append(heading,close); panel.append(head);
   const body=el('div','channel-editor-body');
+  // Track identity: role and musical style are stored independently on every lane.
+  const identity=el('section','studio-card track-identity-card');
+  identity.append(el('h3','','IDENTIDAD DE PISTA · INSTRUMENTO Y ESTILO'));
+  const roleLabel=el('label','studio-control');
+  roleLabel.append(el('span','studio-control-label','TIPO DE CANAL'));
+  const role=el('select','studio-select');
+  const roles=[['vocal','Voz'],['electric-guitar','Guitarra eléctrica'],['acoustic-guitar','Guitarra acústica'],['bass','Bajo'],['drums','Batería'],['keys','Piano / teclados'],['strings','Cuerdas / orquesta'],['brass','Vientos'],['audio','Audio / sample'],['midi','Instrumento MIDI']];
+  roles.forEach(([value,label])=>{const option=el('option','',label);option.value=value;role.append(option);});
+  role.value=track.instrumentRole||'audio';
+  role.addEventListener('change',()=>{track.instrumentRole=role.value;persist(track);});
+  roleLabel.append(role);
+  const styleLabel=el('label','studio-control');
+  styleLabel.append(el('span','studio-control-label','ESTILO / BANCO DE RITMOS'));
+  const style=el('select','studio-select');
+  [['rock','Rock'],['metal','Metal'],['punk','Punk'],['heavy','Heavy metal'],['ballad','Balada'],['waltz','Vals'],['ranchera','Ranchera'],['acoustic','Acústico'],['electronic','Electrónica'],['orchestral','Orquestal']].forEach(([value,label])=>{const option=el('option','',label);option.value=value;style.append(option);});
+  style.value=track.genre||'rock';
+  style.addEventListener('change',()=>{track.genre=style.value;persist(track);});
+  styleLabel.append(style);
+  const identityNote=el('p','studio-note','La identidad queda guardada por pista. El banco de batería usa muestras grabadas; el estilo organiza los kits y presets, no convierte automáticamente una grabación en otro instrumento.');
+  identity.append(roleLabel,styleLabel,identityNote);
   const inputBox=el('section','studio-card');inputBox.append(el('h3','','AUDIO INPUT · '+track.name));
   const inputLabel=el('label','studio-control');inputLabel.append(el('span','studio-control-label','ENTRADA DE GRABACIÓN'));
   const inputSelect=el('select','studio-select');inputSelect.setAttribute('aria-label','Entrada de audio para esta pista');
@@ -106,7 +126,7 @@ export function openChannelEditor(trackId) {
     row.append(check,title,mix);fxBox.append(row);
   }
   const format=el('p','studio-note','Procesamiento no destructivo durante la reproducción. La grabación original se conserva; los efectos se aplican en la cadena del canal.');
-  body.append(inputBox,gainBox,eqBox,compBox,fxBox,format); panel.append(body); modal.append(panel); modal.classList.add('open');
+  body.append(identity,inputBox,gainBox,eqBox,compBox,fxBox,format); panel.append(body); modal.append(panel); modal.classList.add('open');
 }
 
 export function renderMixer() {
