@@ -132,8 +132,8 @@ export function computePeaks(buffer,buckets=200){const data=buffer.getChannelDat
 export function nowSec(){getContext();return ctx.currentTime;}
 
 // MUSICTOOL sampled instrument engine — CC0 recordings, cached for offline use.
-const instrumentBuffers=new Map(),instrumentLoads=new Map(),voices=new Map(),voiceTokens=new Map();
-const SAMPLE_CACHE='musicttool-daw-instrument-bank-v72';
+const instrumentBuffers=new Map(),instrumentLoads=new Map(),voices=new Map(),pendingVoices=new Map();
+const SAMPLE_CACHE='musicttool-instrument-bank-v72';
 const META='https://raw.githubusercontent.com/facebookincubator/Meta-open-sound/main/systems/instruments/';
 const BASS='https://raw.githubusercontent.com/sfzinstruments/karoryfer.big-little-bass/main/Samples/';
 const DRUM='https://raw.githubusercontent.com/august-byrne/phazite-sounds/main/pack/Drums/';
@@ -258,9 +258,10 @@ export async function preloadInstrumentSamples(){
 }
 export function playInstrumentNote(type,note,velocity=.8){
  getContext();const key=String(note);stopInstrumentNote(note);
- const token=(voiceTokens.get(key)||0)+1;voiceTokens.set(key,token);
+ const request={released:false};pendingVoices.set(key,request);
  loadInstrumentVoice(type,Number(note)).then(voice=>{
-  if(voiceTokens.get(key)!==token)return;
+  if(pendingVoices.get(key)!==request)return;
+  pendingVoices.delete(key);
   const source=ctx.createBufferSource();source.buffer=voice.buffer;source.playbackRate.value=voice.rate;
   const gain=ctx.createGain(),now=ctx.currentTime,level=Math.max(.02,Math.min(1,velocity));
   gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(level*.76,now+.012);
@@ -269,13 +270,13 @@ export function playInstrumentNote(type,note,velocity=.8){
   voices.set(key,entry);
   source.onended=()=>{if(voices.get(key)===entry)voices.delete(key);try{gain.disconnect();}catch{}};
   source.start(now);
- }).catch(err=>console.warn('Instrument sample unavailable:',type,note,err));
+  if(request.released&&!voice.oneShot){gain.gain.setTargetAtTime(.0001,now+.01,.035);try{source.stop(now+.19);}catch{}}
+ }).catch(err=>{if(pendingVoices.get(key)===request)pendingVoices.delete(key);console.warn('Instrument sample unavailable:',type,note,err);});
 }
 export function stopInstrumentNote(note){
- const key=String(note),voice=voices.get(key);
- if(!voice){voiceTokens.set(key,(voiceTokens.get(key)||0)+1);return;}
- if(voice.oneShot)return;
- voiceTokens.set(key,(voiceTokens.get(key)||0)+1);
+ const key=String(note),pending=pendingVoices.get(key);
+ if(pending){pending.released=true;return;}
+ const voice=voices.get(key);if(!voice||voice.oneShot)return;
  try{voice.gain.gain.cancelScheduledValues(ctx.currentTime);voice.gain.gain.setTargetAtTime(.0001,ctx.currentTime,.035);voice.source.stop(ctx.currentTime+.18);}catch{}
  voices.delete(key);
 }
