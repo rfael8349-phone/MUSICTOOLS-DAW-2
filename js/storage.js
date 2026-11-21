@@ -87,8 +87,8 @@ export async function loadProject() {
   return true;
 }
 
-export async function saveSampleAsset(id,name,blob){
- const db=await openDB();try{const tx=db.transaction(SAMPLE_STORE,'readwrite');tx.objectStore(SAMPLE_STORE).put({id,name,blob,updatedAt:Date.now()});await new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}finally{db.close();}
+export async function saveSampleAsset(id,name,blob,trimStart=0,trimEnd=null){
+ const db=await openDB();try{const tx=db.transaction(SAMPLE_STORE,'readwrite');tx.objectStore(SAMPLE_STORE).put({id,name,blob,trimStart,trimEnd,updatedAt:Date.now()});await new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}finally{db.close();}
 }
 export async function listSampleAssets(){
  const db=await openDB();try{const tx=db.transaction(SAMPLE_STORE,'readonly');return await requestDone(tx.objectStore(SAMPLE_STORE).getAll());}finally{db.close();}
