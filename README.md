@@ -42,3 +42,13 @@ Changes are committed to the feature branch. Runtime testing is still required o
 - Bumped the app shell and service-worker cache version to avoid keeping the previous shell after deployment.
 
 **Audio note:** the current public sample sources provide recorded voices for piano, electric/acoustic guitar, bass and drums. Piano and acoustic guitar now select velocity layers; other instruments still use the available mapped recordings and do not yet have full multisampling across every pitch/velocity. The sequencer exports its 16-step pattern to a MIDI clip. Real-device playback and sample-host availability still need verification.
+
+
+## V7.5.0 — independent live instrument voices
+
+- Live notes now capture the selected track at note-on, so changing track while a remote sample is loading cannot reroute the note into another channel.
+- Simultaneous notes with the same MIDI pitch on different instrument types or track strips now use independent voice keys instead of replacing one another.
+- Note-off can narrow release by instrument and track; legacy callers remain supported and release all sustained voices at that pitch.
+- Existing per-track gain, EQ, pan, compressor and effect routing remains in the channel strip.
+
+**Validation:** this commit has been saved to the feature branch. Browser audio playback, external sample URLs, recording latency, and iPhone/Android safe-area rendering still require real-device testing. This release is not merged into `main`.
