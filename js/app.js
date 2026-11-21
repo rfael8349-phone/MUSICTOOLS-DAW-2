@@ -7,6 +7,7 @@ import { resume } from './audio-engine.js';
 import { mountSamples } from './samples.js';
 import { mountStudio, setInstrumentView } from './studio.js';
 import { mountCreative } from './creative.js';
+import { mountLaunchpad } from './launchpad.js';
 
 const byId = (id) => document.getElementById(id);
 
@@ -115,6 +116,7 @@ async function boot() {
     playlist.mount();
     mountStudio();
     mountCreative();
+    mountLaunchpad();
     playlist.renderMixer();
   } catch (err) {
     showBootError(err);
