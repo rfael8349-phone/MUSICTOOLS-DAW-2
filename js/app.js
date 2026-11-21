@@ -123,7 +123,7 @@ async function boot() {
   transport.toast(hadSaved ? 'Project restored' : 'MUSICTOOL ready');
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js').catch((err) => console.warn('Service worker:', err));
+    navigator.serviceWorker.register('service-worker.js?v=6.2.2',{updateViaCache:'none'}).catch((err) => console.warn('Service worker:', err));
   }
 }
 
