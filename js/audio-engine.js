@@ -147,18 +147,40 @@ function velocityLayer(velocity,layers=4){
  return v<.35?1:v<.72?2:3;
 }
 const pianoMap=Array.from({length:25},(_,i)=>{const note=48+i;return [note,pianoUrl(note,3)];});
-const guitarZones=[
+const acousticZones=[
  {root:40,max:60,id:'StringLowE'},{root:45,max:65,id:'StringA'},
  {root:50,max:70,id:'StringD'},{root:55,max:75,id:'StringG'},
  {root:59,max:79,id:'StringB'},{root:64,max:84,id:'StringHighE'}
 ];
-function guitarUrl(note,layer=3){
+function acousticUrl(note,layer=3){
  const n=Math.max(40,Math.min(84,Math.round(note)));
- const zones=guitarZones.filter(z=>n>=z.root&&n<=z.max);
- const zone=zones.sort((a,b)=>Math.abs(n-a.root)-Math.abs(n-b.root))[0]||guitarZones.reduce((best,z)=>Math.abs(n-z.root)<Math.abs(n-best.root)?z:best,guitarZones[0]);
+ const zones=acousticZones.filter(z=>n>=z.root&&n<=z.max);
+ const zone=zones.sort((a,b)=>Math.abs(n-a.root)-Math.abs(n-b.root))[0]||acousticZones.reduce((best,z)=>Math.abs(n-z.root)<Math.abs(n-best.root)?z:best,acousticZones[0]);
  return {rootNote:n,url:sample(META,'meta-steel-guitar/ogg/INSGuitarSteel_'+zone.id+'_Vel0'+layer+'_'+sampleNoteName(n)+'_01.ogg')};
 }
-const guitarMap=[40,45,50,55,60,64,67,72,79].map(note=>[note,guitarUrl(note,3).url]);
+const acousticMap=[40,45,50,55,60,64,67,72,79].map(note=>[note,acousticUrl(note,3).url]);
+const electricZones=[
+ {low:35,high:38,root:36,file:'C2_s1_01.flac'},
+ {low:39,high:42,root:41,file:'F2_s1_01.flac'},
+ {low:43,high:46,root:45,file:'A2_s2_01.flac'},
+ {low:47,high:49,root:48,file:'C3_s2_02.flac'},
+ {low:50,high:53,root:52,file:'E3_s3_01.flac'},
+ {low:54,high:56,root:55,file:'G3_s4_01.flac'},
+ {low:57,high:61,root:59,file:'B3_s5_01.flac'},
+ {low:62,high:65,root:64,file:'E4_s6_01.flac'},
+ {low:66,high:69,root:67,file:'G4_s6_01.flac'},
+ {low:70,high:72,root:71,file:'B4_s6_01.flac'},
+ {low:73,high:76,root:74,file:'D5_s6_01.flac'},
+ {low:77,high:82,root:80,file:'G#5_s6_03.flac'},
+ {low:83,high:86,root:85,file:'C#6_s6_01.flac'}
+];
+const ELECTRIC='https://raw.githubusercontent.com/freepats/electric-guitar-FSBS-clean/main/samples/bridge/small/';
+function electricUrl(note){
+ const n=Math.max(35,Math.min(86,Math.round(note)));
+ const zone=electricZones.find(z=>n>=z.low&&n<=z.high)||electricZones.reduce((best,z)=>Math.abs(n-z.root)<Math.abs(n-best.root)?z:best,electricZones[0]);
+ return {rootNote:zone.root,url:sample(ELECTRIC,zone.file),oneShot:false};
+}
+const guitarMap=electricZones.map(z=>[z.root,sample(ELECTRIC,z.file)]);
 const bassRoots=[
  [35,'b1'],[36,'c2'],[38,'d2'],[40,'e2'],[41,'f2'],[43,'g2'],[45,'a2'],[47,'b2'],
  [48,'c3'],[50,'d3'],[52,'e3'],[53,'f3'],[55,'g3'],[57,'a3'],[59,'b3'],[60,'c4'],
@@ -205,8 +227,9 @@ function resolveSample(type,note,velocity=.8){
   const rootNote=Math.max(21,Math.min(108,n)),layer=velocityLayer(velocity,4);
   return {rootNote,url:pianoUrl(rootNote,layer),oneShot:false};
  }
- if(type==='guitar'){
-  const layer=velocityLayer(velocity,3),entry=guitarUrl(n,layer);
+ if(type==='guitar')return electricUrl(n);
+ if(type==='acoustic'){
+  const layer=velocityLayer(velocity,3),entry=acousticUrl(n,layer);
   return {...entry,oneShot:false};
  }
  if(type==='bass'){
@@ -258,7 +281,7 @@ function makeSynthBuffer(note){
 export function preloadInstrumentSamples(){
  if(samplePreloadPromise)return samplePreloadPromise;
  samplePreloadPromise=(async()=>{
-  const urls=[...pianoMap,...guitarMap,...bassMap].map(x=>x[1]).concat(Object.values(drumSamples));
+  const urls=[...pianoMap,...guitarMap,...acousticMap,...bassMap].map(x=>x[1]).concat(Object.values(drumSamples));
   const unique=[...new Set(urls)];
   let cache=null;try{if('caches'in window)cache=await caches.open(SAMPLE_CACHE);}catch{}
   const results=[];
