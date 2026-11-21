@@ -27,7 +27,7 @@ All bundled source collections listed below are dedicated to the public domain u
 
 - Source: [Phazite Sounds](https://github.com/august-byrne/phazite-sounds)
 - License: CC0 1.0 Universal
-- Selected acoustic and electronic drum one-shots are loaded from the pack and cached locally.
+- Selected recorded acoustic drum one-shots are loaded from the pack and cached locally.
 
 ## Runtime and offline behavior
 
