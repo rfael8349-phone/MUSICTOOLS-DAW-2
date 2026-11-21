@@ -23,7 +23,7 @@ function buildFx(ch,track){
  const effects=(track.effects||[]).filter(f=>f.enabled);
  const signature=effects.map(f=>f.type+':'+(f.mix??.35)).join('|');
  if(signature===ch.fxSignature)return;
- for(const n of ch.fxNodes){try{n.disconnect();}catch{}}
+ for(const n of ch.fxNodes){try{n.disconnect();}catch{}try{if(typeof n.stop==='function')n.stop();}catch{}}
  ch.fxNodes=[];
  const tail=ch.panner||master;
  // Rewire compressor through the enabled effect chain to the channel output.
