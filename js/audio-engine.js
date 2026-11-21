@@ -29,7 +29,6 @@ function buildFx(ch,track){
  const tail=ch.panner||ch.analyser;
  // Rewire compressor through the enabled effect chain to the channel output.
  try{ch.compressor.disconnect();}catch{}
- if(ch.panner)try{ch.panner.disconnect();}catch{}
  let node=ch.compressor;
  for(const fx of effects){
   let effect=null;
