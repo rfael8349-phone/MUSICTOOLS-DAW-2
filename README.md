@@ -42,3 +42,15 @@ Changes are committed to the feature branch. Runtime testing is still required o
 - Bumped the app shell and service-worker cache version to avoid keeping the previous shell after deployment.
 
 **Audio note:** the current public sample sources provide recorded voices for piano, electric/acoustic guitar, bass and drums. Piano and acoustic guitar now select velocity layers; other instruments still use the available mapped recordings and do not yet have full multisampling across every pitch/velocity. The sequencer exports its 16-step pattern to a MIDI clip. Real-device playback and sample-host availability still need verification.
+
+
+## V7.6.0 — mobile audio engine and channel-locked performance
+
+- Restored the V7.5 independent live-voice routing on top of the already merged V7.4.1 main branch.
+- Every live note captures its instrument and selected track at note-on; note-off releases only that matching instrument/channel voice from Piano Roll and Creative Studio.
+- Equal MIDI pitches can coexist on different channels or instrument types without replacing each other.
+- Stop now releases sustained live voices as well as stopping scheduled audio clips.
+- Sample Cache API lookup failures no longer prevent a network fetch; the sample cache namespace is versioned for this release.
+- Existing per-track EQ, gain, pan, compressor, effects, groove banks and responsive safe-area layout are retained.
+
+**Validation status:** source changes are committed on the V7.6 feature branch. Browser syntax/runtime and physical iPhone Safari / Android Chrome audio, recording latency, external sample host and offline-cache behavior must still be tested. A branch link is available for review; it is not a device-certified release.

@@ -18,8 +18,8 @@ const keyMap = {a:0,w:1,s:2,e:3,d:4,f:5,t:6,g:7,y:8,h:9,u:10,j:11,k:12,o:13,l:14
 
 function node(tag, cls='', text='') { const n=document.createElement(tag); if(cls)n.className=cls; if(text)n.textContent=text; return n; }
 function noteName(n){return ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'][n%12];}
-function press(note,key,vel=.8,kind=tone){ if(held.has(key))return; resume(); playInstrumentNote(kind,note,vel); held.set(key,note); if(midiCapture)activeCaptureNotes.set(key,{pitch:note,time:Math.max(0,(performance.now()-midiCapture.started)/1000),velocity:vel}); }
-function release(key){const n=held.get(key);if(n===undefined)return;stopInstrumentNote(n);held.delete(key);const started=activeCaptureNotes.get(key);if(started&&midiCapture){started.duration=Math.max(.06,(performance.now()-midiCapture.started)/1000-started.time);midiCapture.notes.push(started);activeCaptureNotes.delete(key);}}
+function press(note,key,vel=.8,kind=tone){ if(held.has(key))return; resume(); playInstrumentNote(kind,note,vel); held.set(key,{note,type:kind,trackId:state.selectedTrackId||null}); if(midiCapture)activeCaptureNotes.set(key,{pitch:note,time:Math.max(0,(performance.now()-midiCapture.started)/1000),velocity:vel}); }
+function release(key){const item=held.get(key);if(item===undefined)return;stopInstrumentNote(item.note,item.type||null,item.trackId||null);held.delete(key);const started=activeCaptureNotes.get(key);if(started&&midiCapture){started.duration=Math.max(.06,(performance.now()-midiCapture.started)/1000-started.time);midiCapture.notes.push(started);activeCaptureNotes.delete(key);}}
 function whiteKeyIndex(semitone){return [0,2,4,5,7,9,11].indexOf(semitone);}
 function renderPiano(host){
  host.replaceChildren();

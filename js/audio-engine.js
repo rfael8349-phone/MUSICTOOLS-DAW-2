@@ -126,7 +126,7 @@ function scheduleClip(track,clip,ch,fromSec,t0){
  const src=ctx.createBufferSource();src.buffer=clip.audioBuffer;const g=ctx.createGain();src.connect(g);g.connect(ch.gain);src.start(when,offset,duration);
  const entry={source:src,gain:g,startTime:when,clipId:clip.id,trackId:track.id};src.onended=()=>{const i=activeSources.indexOf(entry);if(i>=0)activeSources.splice(i,1);};activeSources.push(entry);
 }
-export function stopAll(){for(const e of activeSources){try{e.source.stop();}catch{}try{e.gain.disconnect();}catch{}}activeSources=[];}
+export function stopAll(){for(const e of activeSources){try{e.source.stop();}catch{}try{e.gain.disconnect();}catch{}}activeSources=[];for(const pending of pendingVoices.values())pending.released=true;for(const [key,voice] of voices){try{voice.gain.gain.cancelScheduledValues(ctx.currentTime);voice.gain.gain.setTargetAtTime(.0001,ctx.currentTime,.025);voice.source.stop(ctx.currentTime+.12);}catch{}voices.delete(key);}}
 export async function decodeAudio(arrayBuffer){getContext();return await ctx.decodeAudioData(arrayBuffer.slice(0));}
 export function computePeaks(buffer,buckets=200){const data=buffer.getChannelData(0),per=Math.floor(data.length/buckets)||1,peaks=new Float32Array(buckets);for(let i=0;i<buckets;i++){let max=0;for(let j=i*per;j<Math.min((i+1)*per,data.length);j++)max=Math.max(max,Math.abs(data[j]));peaks[i]=max;}return peaks;}
 export function nowSec(){getContext();return ctx.currentTime;}
@@ -134,7 +134,7 @@ export function nowSec(){getContext();return ctx.currentTime;}
 // MUSICTOOL sampled instrument engine — CC0 recordings, cached for offline use.
 const instrumentBuffers=new Map(),instrumentLoads=new Map(),voices=new Map(),pendingVoices=new Map();
 let samplePreloadPromise=null;
-const SAMPLE_CACHE='musicttool-instrument-bank-v72';
+const SAMPLE_CACHE='musicttool-instrument-bank-v76';
 const META='https://raw.githubusercontent.com/facebookincubator/Meta-open-sound/main/systems/instruments/';
 const BASS='https://raw.githubusercontent.com/sfzinstruments/karoryfer.big-little-bass/main/Samples/';
 const DRUM='https://raw.githubusercontent.com/august-byrne/phazite-sounds/main/pack/Drums/';
@@ -232,7 +232,7 @@ function resolveSample(type,note,velocity=.8){
 }
 async function getCachedResponse(url){
  let cache=null;try{if('caches'in window)cache=await caches.open(SAMPLE_CACHE);}catch{}
- let response=cache?await cache.match(url):null;
+ let response=null;try{if(cache)response=await cache.match(url);}catch{}
  if(!response){
   response=await fetch(url,{mode:'cors'});
   if(!response.ok)throw new Error('Sample download failed: '+response.status);
@@ -290,7 +290,13 @@ export function preloadInstrumentSamples(){
  return samplePreloadPromise;
 }
 export function playInstrumentNote(type,note,velocity=.8){
- getContext();const key=String(note);stopInstrumentNote(note);
+ getContext();
+ // Capture the destination at note-on: changing the selected track while a sample
+ // is loading must not silently route that note into a different channel.
+ const selected=state.tracks.find(track=>track.id===state.selectedTrackId);
+ const trackId=selected?.id||null;
+ const key=[type,trackId??'master',Number(note)].join(':');
+ stopInstrumentNote(note,type,trackId);
  const request={released:false};pendingVoices.set(key,request);
  loadInstrumentVoice(type,Number(note),velocity).then(voice=>{
   if(pendingVoices.get(key)!==request)return;
@@ -299,21 +305,29 @@ export function playInstrumentNote(type,note,velocity=.8){
   const gain=ctx.createGain(),now=ctx.currentTime,level=Math.max(.02,Math.min(1,velocity));
   gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(level*.76,now+.012);
   source.connect(gain);
-  // Live instruments pass through the currently selected track strip, so its EQ, gain and FX are audible.
-  const selected=state.tracks.find(track=>track.id===state.selectedTrackId);
+  // Each live voice belongs to one channel strip. Equal pitches on different
+  // tracks/types remain independent instead of replacing each other in a global note map.
   const destination=selected?ensureChannel(selected.id).gain:master;
   gain.connect(destination);
-  const entry={source,gain,oneShot:voice.oneShot,trackId:selected?.id||null};
+  const entry={source,gain,oneShot:voice.oneShot,trackId,type,note:Number(note)};
   voices.set(key,entry);
   source.onended=()=>{if(voices.get(key)===entry)voices.delete(key);try{gain.disconnect();}catch{}};
   source.start(now);
   if(request.released&&!voice.oneShot){gain.gain.setTargetAtTime(.0001,now+.01,.035);try{source.stop(now+.19);}catch{}}
  }).catch(err=>{if(pendingVoices.get(key)===request)pendingVoices.delete(key);console.warn('Instrument sample unavailable:',type,note,err);});
 }
-export function stopInstrumentNote(note){
- const key=String(note),pending=pendingVoices.get(key);
- if(pending){pending.released=true;return;}
- const voice=voices.get(key);if(!voice||voice.oneShot)return;
- try{voice.gain.gain.cancelScheduledValues(ctx.currentTime);voice.gain.gain.setTargetAtTime(.0001,ctx.currentTime,.035);voice.source.stop(ctx.currentTime+.18);}catch{}
- voices.delete(key);
+export function stopInstrumentNote(note,type=null,trackId=null){
+ const pitch=Number(note);
+ // Older UI callers only supply the pitch. Stop every matching sustained voice;
+ // newer callers may narrow this to an instrument and/or channel.
+ for(const [key,pending] of pendingVoices){
+  const [voiceType,voiceTrack,voicePitch]=key.split(':');
+  if(Number(voicePitch)!==pitch||(type&&voiceType!==type)||(trackId&&voiceTrack!==trackId))continue;
+  pending.released=true;
+ }
+ for(const [key,voice] of voices){
+  if(voice.note!==pitch||(type&&voice.type!==type)||(trackId&&voice.trackId!==trackId)||voice.oneShot)continue;
+  try{voice.gain.gain.cancelScheduledValues(ctx.currentTime);voice.gain.gain.setTargetAtTime(.0001,ctx.currentTime,.035);voice.source.stop(ctx.currentTime+.18);}catch{}
+  voices.delete(key);
+ }
 }
