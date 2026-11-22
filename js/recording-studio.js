@@ -26,7 +26,7 @@ function render(){
  const trackSelect=el('select','studio-select');trackSelect.setAttribute('aria-label','Pista de destino de grabación');
  const tracks=audioTracks();tracks.forEach(t=>{const o=el('option','',t.name);o.value=t.id;trackSelect.append(o);});
  const current=selectedTrack();if(current)trackSelect.value=current.id;
- trackSelect.onchange=()=>{state.selectedTrackId=trackSelect.value;state.tracks.forEach(t=>t.armed=t.id===state.selectedTrackId);saveProject().catch(console.error);};
+ trackSelect.onchange=()=>{state.selectedTrackId=trackSelect.value;state.tracks.forEach(t=>t.armed=t.id===state.selectedTrackId);saveProject().catch(console.error);render();};
  trackLabel.append(trackSelect);card.append(trackLabel);
  const inputLabel=el('label','recording-field');inputLabel.append(el('span','','ENTRADA DE AUDIO'));
  const inputSelect=el('select','studio-select');inputSelect.setAttribute('aria-label','Micrófono o interfaz de audio');
@@ -47,6 +47,6 @@ function render(){
  const hint=el('div','recording-hint');hint.append(el('strong','','FLUJO DE GRABACIÓN'),el('p','','1. Selecciona la pista.  2. Comprueba el micrófono.  3. Pulsa Grabar: escucharás una cuenta de entrada de cuatro pulsos.  4. Pulsa Detener para guardar la toma como clip en la Playlist.'));
  wrap.append(hero,status,card,hint);host.append(wrap);
  if(hasMic()&&navigator.mediaDevices?.enumerateDevices){navigator.mediaDevices.enumerateDevices().then(ds=>{const inputs=ds.filter(d=>d.kind==='audioinput');if(inputs.length){status.querySelector('span').textContent='ENTRADA AUTORIZADA · '+(inputs[0].label||'MICRÓFONO DISPONIBLE');status.classList.add('connected');}}).catch(()=>{});}
- if(meterTimer===null&&hasMic()&&getStream())startMeter(getStream());
+ if(hasMic()&&getStream())startMeter(getStream());
 }
 export function mountRecordingStudio(){host=$('recording-studio-host');if(!host)return;render();if(!window.__musicToolRecordingPoll){window.__musicToolRecordingPoll=setInterval(()=>{const b=host?.querySelector('.record-main-button');if(!b)return;b.textContent=state.isRecording?'■  FINALIZAR TOMA':'●  EMPEZAR A GRABAR';b.classList.toggle('is-recording',state.isRecording);const s=host.querySelector('#recording-status span');if(s&&state.isRecording){s.textContent='GRABANDO · '+(selectedTrack()?.name||'PISTA');host.querySelector('#recording-status')?.classList.add('recording');}},250);}}
