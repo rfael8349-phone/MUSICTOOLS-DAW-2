@@ -20,5 +20,5 @@ document.addEventListener('DOMContentLoaded',()=>{
  $('studio-open-playlist')?.addEventListener('click',()=>document.querySelector('[data-target="playlist"]')?.click());
  $('studio-open-mixer')?.addEventListener('click',()=>document.querySelector('[data-target="mixer"]')?.click());
  $('studio-add-track')?.addEventListener('click',async()=>{const t=createTrack('audio','Nueva pista '+(state.tracks.length+1));state.selectedTrackId=t.id;await saveProject();refreshAll();render();});
- render();window.addEventListener('focus',render);document.addEventListener('visibilitychange',()=>{if(!document.hidden)render();});
+ render();window.addEventListener('musictool:ready',render);window.addEventListener('focus',render);document.addEventListener('visibilitychange',()=>{if(!document.hidden)render();});
 });
