@@ -111,8 +111,9 @@ function scheduleClip(track,clip,ch,fromSec,t0){
    const source=ctx.createBufferSource(),gain=ctx.createGain();
    source.buffer=voice.buffer;source.playbackRate.value=voice.rate;
    const noteEnd=when+Math.max(.16,remaining);
-   gain.gain.setValueAtTime(.0001,when);gain.gain.linearRampToValueAtTime(velocity*.72,when+.012);
-   gain.gain.setValueAtTime(velocity*.72,Math.max(when+.025,noteEnd-.045));gain.gain.linearRampToValueAtTime(.0001,noteEnd);
+   const peak=velocity*.72*(type==='drum'?drumLevel(note.pitch):1);
+   gain.gain.setValueAtTime(.0001,when);gain.gain.linearRampToValueAtTime(peak,when+.012);
+   gain.gain.setValueAtTime(peak,Math.max(when+.025,noteEnd-.045));gain.gain.linearRampToValueAtTime(.0001,noteEnd);
    source.connect(gain);gain.connect(ch.gain);source.start(when);source.stop(noteEnd+.02);
    const entry={source,gain,startTime:when,clipId:clip.id,trackId:track.id};
    source.onended=()=>{const i=activeSources.indexOf(entry);if(i>=0)activeSources.splice(i,1);try{gain.disconnect();}catch{}};
@@ -209,6 +210,17 @@ const drumMap={
  56:'rideBell',57:'crash'
 };
 const padOrder=['kickBig','snare','clap','hat','hatOpen','tomFloor','tomLow','tomHigh','crash','ride','rim','kick','snareRim','snareTight','hatPedal','rideBell'];
+function drumLevel(note){
+ const n=Number(note);
+ if([35,36,43].includes(n))return 1.22;
+ if([38,40].includes(n))return 1.05;
+ if([42,44,46].includes(n))return .48;
+ if([49,52,57].includes(n))return .62;
+ if([51,53,55,56].includes(n))return .58;
+ if([39,54].includes(n))return .58;
+ if([37].includes(n))return .62;
+ return .78;
+}
 function nearestMap(map,note){
  let best=map[0];for(const entry of map)if(Math.abs(entry[0]-note)<Math.abs(best[0]-note))best=entry;
  return {rootNote:best[0],url:best[1]};
@@ -303,7 +315,7 @@ export function playInstrumentNote(type,note,velocity=.8){
   pendingVoices.delete(key);
   const source=ctx.createBufferSource();source.buffer=voice.buffer;source.playbackRate.value=voice.rate;
   const gain=ctx.createGain(),now=ctx.currentTime,level=Math.max(.02,Math.min(1,velocity));
-  gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(level*.76,now+.012);
+  gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(Math.min(.98,level*.76*(type==='drum'?drumLevel(note):1)),now+.012);
   source.connect(gain);
   // Each live voice belongs to one channel strip. Equal pitches on different
   // tracks/types remain independent instead of replacing each other in a global note map.
