@@ -9,7 +9,8 @@ const $ = id => document.getElementById(id);
 const held = new Map();
 let octave = 4, tone = 'piano', qwerty = false, theme = 'xp';
 let pattern = Array.from({length:10},()=>Array(16).fill(false));
-let patternTimer = null, patternStep = 0, patternBpm = 100, drumStyle = 'CUMBIA', drumPatternInitialized = false;\nconst drumVelocity=[.98,.78,.38,.28,.34,.42,.42,.46,.62,.48];
+let patternTimer = null, patternStep = 0, patternBpm = 100, drumStyle = 'CUMBIA', drumPatternInitialized = false;
+const drumVelocity=[.98,.78,.38,.28,.34,.42,.42,.46,.62,.48];
 let midiCapture = null, midiAccess = null;
 const activeCaptureNotes = new Map();
 const tones = [['piano','PIANO'],['guitar','GUITARRA ELÉCTRICA'],['acoustic','GUITARRA ACÚSTICA'],['bass','BAJO'],['synth','SYNTH']];
@@ -110,7 +111,8 @@ function renderDrums(host){
   REGGAE:[[0,8],[4,12],[2,6,10,14],[4,12],[8]],
   ELECTRONIC:[[0,4,8,12],[4,12],[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],[2,6,10,14],[8,12]]
  };
- const family={ARENA80:'ROCK',GUARANIA:'WALTZ',POLKA:'WALTZ',TANGO:'WALTZ',FLAMENCO:'RANCHERA',RUMBA:'RANCHERA',SALSA:'CUMBIA',SON:'CUMBIA',SAMBA:'CUMBIA',BOSSA:'BALLAD',VALLENATO:'CUMBIA',COUNTRY:'ROCK',BLUES:'BALLAD',SKA:'REGGAE',BRITPOP:'ROCK'};\n const applyPreset=()=>{const p=presets[family[style.value]||style.value]||presets.ROCK;pattern=Array.from({length:10},(_,i)=>Array.from({length:16},(_,step)=>(p[i]||[]).includes(step)));};
+ const family={ARENA80:'ROCK',GUARANIA:'WALTZ',POLKA:'WALTZ',TANGO:'WALTZ',FLAMENCO:'RANCHERA',RUMBA:'RANCHERA',SALSA:'CUMBIA',SON:'CUMBIA',SAMBA:'CUMBIA',BOSSA:'BALLAD',VALLENATO:'CUMBIA',COUNTRY:'ROCK',BLUES:'BALLAD',SKA:'REGGAE',BRITPOP:'ROCK'};
+ const applyPreset=()=>{const p=presets[family[style.value]||style.value]||presets.ROCK;pattern=Array.from({length:10},(_,i)=>Array.from({length:16},(_,step)=>(p[i]||[]).includes(step)));};
  style.onchange=()=>{drumStyle=style.value;applyPreset();renderDrums(host);};
  const bpm=node('input','studio-select');bpm.type='number';bpm.min=50;bpm.max=220;bpm.value=patternBpm;bpm.style.width='76px';bpm.onchange=()=>patternBpm=Math.max(50,Math.min(220,Number(bpm.value)||100));
  const play=node('button','btn accent','▶ PATTERN');play.onclick=()=>{if(patternTimer){clearInterval(patternTimer);patternTimer=null;play.textContent='▶ PATTERN';return;}patternStep=0;play.textContent='■ STOP';patternTimer=setInterval(()=>{drumRows.forEach((r,i)=>{if(pattern[i][patternStep]){resume();playInstrumentNote('drum',r[1],drumVelocity[i]);}});host.querySelectorAll('[data-step]').forEach(x=>x.classList.toggle('playing',Number(x.dataset.step)===patternStep));patternStep=(patternStep+1)%16;},60000/patternBpm/4);};
