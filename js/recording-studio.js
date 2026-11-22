@@ -12,7 +12,7 @@ function audioTracks(){return state.tracks.filter(t=>t.kind==='audio');}
 function selectedTrack(){return audioTracks().find(t=>t.id===state.selectedTrackId)||audioTracks()[0]||null;}
 function stopMeter(){if(meterTimer)clearInterval(meterTimer);meterTimer=null;analyser=null;meterData=null;if(meterSource){try{meterSource.disconnect();}catch{}meterSource=null;}}
 function startMeter(stream){
- stopMeter();const ctx=getContext();analyser=ctx.createAnalyser();analyser.fftSize=512;meterData=new Uint8Array(analyser.fftSize);meterSource=ctx.createMediaStreamSource(stream);meterSource.connect(analyser);
+ stopMeter();const ctx=getContext();ctx.resume().catch(()=>{});analyser=ctx.createAnalyser();analyser.fftSize=512;meterData=new Uint8Array(analyser.fftSize);meterSource=ctx.createMediaStreamSource(stream);meterSource.connect(analyser);
  const fill=$('recording-meter-fill'),value=$('recording-meter-value');
  meterTimer=setInterval(()=>{if(!analyser||!meterData)return;analyser.getByteTimeDomainData(meterData);let sum=0;for(const v of meterData){const n=(v-128)/128;sum+=n*n;}const rms=Math.sqrt(sum/meterData.length);const pct=Math.min(100,Math.round(rms*280));if(fill)fill.style.width=pct+'%';if(value)value.textContent=pct<2?'SIN SEÑAL':pct<72?'SEÑAL OK':'NIVEL ALTO';},70);
 }
@@ -42,7 +42,7 @@ function render(){
  const gain=el('input');gain.type='range';gain.min='-12';gain.max='12';gain.step='1';gain.value=current?.inputGainDb??0;
  const gainValue=el('output','',gain.value+' dB');gain.oninput=()=>{gainValue.textContent=gain.value+' dB';const t=selectedTrack();if(t)t.inputGainDb=Number(gain.value);};gain.onchange=()=>saveProject().catch(console.error);gainLabel.append(gain,gainValue);card.append(gainLabel);
  const monitorNote=el('p','recording-note','La monitorización está desactivada durante la toma para evitar acoples. Usa auriculares y ajusta la ganancia para que el medidor no llegue continuamente al rojo.');
- const actions=el('div','recording-actions');const rec=el('button','record-main-button','●  EMPEZAR A GRABAR');rec.type='button';rec.onclick=async()=>{const t=selectedTrack();if(!t){toast('Crea primero una pista de audio');return;}state.selectedTrackId=t.id;try{if(state.isRecording){await stopRecord();rec.textContent='●  EMPEZAR A GRABAR';}else{await startRecord();} }catch(e){toast(e.message||'No se pudo iniciar la grabación');}};const stop=el('button','btn','■ DETENER');stop.type='button';stop.onclick=()=>stopRecord();
+ const actions=el('div','recording-actions');const rec=el('button','record-main-button','●  EMPEZAR A GRABAR');rec.type='button';rec.onclick=async()=>{const t=selectedTrack();if(!t){toast('Crea primero una pista de audio');return;}state.selectedTrackId=t.id;try{if(state.isRecording){await stopRecord();rec.textContent='●  EMPEZAR A GRABAR';}else{await startRecord();if(hasMic()&&getStream())startMeter(getStream());} }catch(e){toast(e.message||'No se pudo iniciar la grabación');}};const stop=el('button','btn','■ DETENER');stop.type='button';stop.onclick=()=>stopRecord();
  actions.append(rec,stop);card.append(monitorNote,actions);
  const hint=el('div','recording-hint');hint.append(el('strong','','FLUJO DE GRABACIÓN'),el('p','','1. Selecciona la pista.  2. Comprueba el micrófono.  3. Pulsa Grabar: escucharás una cuenta de entrada de cuatro pulsos.  4. Pulsa Detener para guardar la toma como clip en la Playlist.'));
  wrap.append(hero,status,card,hint);host.append(wrap);
