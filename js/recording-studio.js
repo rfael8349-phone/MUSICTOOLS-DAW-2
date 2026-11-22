@@ -1,6 +1,6 @@
 // Dedicated mobile recording desk: explicit input selection, mic check and one-tap takes.
 import { state } from './state.js';
-import { requestMic, hasMic } from './recorder.js';
+import { requestMic, hasMic, getStream } from './recorder.js';
 import { getContext } from './audio-engine.js';
 import { startRecord, stopRecord, toast } from './transport.js';
 import { saveProject } from './storage.js';
@@ -47,6 +47,6 @@ function render(){
  const hint=el('div','recording-hint');hint.append(el('strong','','FLUJO DE GRABACIÓN'),el('p','','1. Selecciona la pista.  2. Comprueba el micrófono.  3. Pulsa Grabar: escucharás una cuenta de entrada de cuatro pulsos.  4. Pulsa Detener para guardar la toma como clip en la Playlist.'));
  wrap.append(hero,status,card,hint);host.append(wrap);
  if(hasMic()&&navigator.mediaDevices?.enumerateDevices){navigator.mediaDevices.enumerateDevices().then(ds=>{const inputs=ds.filter(d=>d.kind==='audioinput');if(inputs.length){status.querySelector('span').textContent='ENTRADA AUTORIZADA · '+(inputs[0].label||'MICRÓFONO DISPONIBLE');status.classList.add('connected');}}).catch(()=>{});}
- if(meterTimer===null&&hasMic()){const {getStream}=window.__musicToolRecorder||{};if(getStream)startMeter(getStream());}
+ if(meterTimer===null&&hasMic()&&getStream())startMeter(getStream());
 }
 export function mountRecordingStudio(){host=$('recording-studio-host');if(!host)return;render();if(!window.__musicToolRecordingPoll){window.__musicToolRecordingPoll=setInterval(()=>{const b=host?.querySelector('.record-main-button');if(!b)return;b.textContent=state.isRecording?'■  FINALIZAR TOMA':'●  EMPEZAR A GRABAR';b.classList.toggle('is-recording',state.isRecording);const s=host.querySelector('#recording-status span');if(s&&state.isRecording){s.textContent='GRABANDO · '+(selectedTrack()?.name||'PISTA');host.querySelector('#recording-status')?.classList.add('recording');}},250);}}
