@@ -9,6 +9,7 @@ import { mountStudio, setInstrumentView } from './studio.js';
 import { mountCreative } from './creative.js';
 import { mountLaunchpad } from './launchpad.js';
 import { mountTools } from './tools.js';
+import { mountRecordingStudio } from './recording-studio.js';
 
 const byId = (id) => document.getElementById(id);
 
@@ -62,6 +63,7 @@ function wireNavigation() {
       if (target === 'playlist') playlist.refreshAll();
       if (target === 'samples') mountSamples();
       if (target === 'mixer') playlist.renderMixer();
+      if (target === 'studio') mountRecordingStudio();
     });
   }
 }
@@ -125,6 +127,7 @@ async function boot() {
     mountCreative();
     mountLaunchpad();
     mountTools();
+    mountRecordingStudio();
     playlist.renderMixer();
   } catch (err) {
     showBootError(err);
@@ -136,7 +139,7 @@ async function boot() {
   preloadInstrumentSamples().then(({ready,total})=>{console.info('MUSICTOOL audio bank ready',ready+'/'+total);transport.toast(ready===total?'Banco de instrumentos listo · muestras guardadas':'Banco parcial '+ready+'/'+total+' · conecta internet y recarga');}).catch(err=>{console.warn('Sample preload:',err);transport.toast('No se pudo descargar el banco de sonidos');});
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js?v=7.4.0',{updateViaCache:'none'}).catch((err) => console.warn('Service worker:', err));
+    navigator.serviceWorker.register('service-worker.js?v=7.7.0',{updateViaCache:'none'}).catch((err) => console.warn('Service worker:', err));
   }
 }
 
