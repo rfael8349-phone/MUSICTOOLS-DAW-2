@@ -37,8 +37,8 @@
   /* Sizing */
   --topbar-h: 64px;
   --nav-h: 60px;
-  --radius: 6px;
-  --radius-lg: 10px;
+  --radius: 12px;
+  --radius-lg: 18px;
 
   /* Type */
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;

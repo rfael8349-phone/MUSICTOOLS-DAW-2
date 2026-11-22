@@ -71,7 +71,7 @@ export function openChannelEditor(trackId) {
   const styleLabel=el('label','studio-control');
   styleLabel.append(el('span','studio-control-label','ESTILO / BANCO DE RITMOS'));
   const style=el('select','studio-select');
-  [['rock','Rock'],['metal','Metal'],['punk','Punk'],['heavy','Heavy metal'],['ballad','Balada'],['waltz','Vals'],['ranchera','Ranchera'],['acoustic','Acústico'],['electronic','Electrónica'],['orchestral','Orquestal']].forEach(([value,label])=>{const option=el('option','',label);option.value=value;style.append(option);});
+  [['rock','Rock'],['metal','Metal'],['punk','Punk'],['heavy','Heavy metal'],['ballad','Balada'],['waltz','Vals'],['ranchera','México · Ranchera'],['acoustic','Acústico'],['electronic','Electrónica'],['orchestral','Orquestal'],['polka-paraguaya','Paraguay · Polca paraguaya'],['guarania','Paraguay · Guarania'],['chacarera','Argentina · Chacarera'],['zamba','Argentina · Zamba'],['tango','Argentina · Tango'],['cumbia','Colombia · Cumbia'],['vallenato','Colombia · Vallenato'],['salsa','Caribe · Salsa'],['merengue','Caribe · Merengue'],['reggaeton','Caribe · Reguetón'],['norteno','México · Norteño'],['mariachi','México · Mariachi'],['samba','Brasil · Samba'],['bossa','Brasil · Bossa nova'],['flamenco','España · Flamenco'],['pasodoble','España · Pasodoble'],['reggae','Jamaica · Reggae'],['blues','Estados Unidos · Blues'],['country','Estados Unidos · Country'],['jazz','Estados Unidos · Jazz'],['funk','Funk'],['afrobeat','África occidental · Afrobeat']].forEach(([value,label])=>{const option=el('option','',label);option.value=value;style.append(option);});
   style.value=track.genre||'rock';
   style.addEventListener('change',()=>{track.genre=style.value;persist(track);});
   styleLabel.append(style);

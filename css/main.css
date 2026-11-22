@@ -1301,3 +1301,42 @@ body::before{display:none}
 :root[data-theme]:not([data-theme="xp"]) .sample-waveform,:root[data-theme]:not([data-theme="xp"]) .midi-note-lane{background:var(--surface-sunken)}
 :root[data-theme]:not([data-theme="xp"]) .midi-note-bar{background:var(--accent)}
 :root[data-theme]:not([data-theme="xp"]) .tools-tab,:root[data-theme]:not([data-theme="xp"]) .tool-tab{background:var(--surface);border-radius:10px}
+
+/* V7.7 — rounded, airy recording desk and consistent studio surfaces */
+:root{--radius:12px;--radius-lg:18px}
+.view{overscroll-behavior:contain}
+#topbar{gap:clamp(6px,1vw,14px)}
+.btn,.compact-toggle,.studio-select,.recording-card,.recording-hint,.tool-card,.creative-toolbar,.instrument-panel,.midi-clip-card,.sample-row,.drum-pad,.drum-step,.launchpad-pad{border-radius:12px}
+.btn{min-height:38px}
+.placeholder-panel{padding:clamp(14px,2.5vw,28px)}
+.recording-studio-host{height:100%;overflow:auto;padding:clamp(12px,2.5vw,28px);background:radial-gradient(ellipse at 20% 0%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 55%),var(--bg)}
+.recording-studio{max-width:900px;margin:0 auto;display:grid;gap:14px}
+.recording-hero{padding:clamp(16px,3vw,28px);border:1px solid var(--border);border-radius:22px;background:linear-gradient(135deg,var(--surface-raised),var(--surface));box-shadow:0 12px 34px #0002}
+.recording-eyebrow{font-size:10px;letter-spacing:.16em;color:var(--accent-strong);font-weight:800}
+.recording-hero h2{font-size:clamp(22px,5vw,34px);letter-spacing:.03em;margin:8px 0;color:var(--cream)}
+.recording-hero p,.recording-note,.recording-hint p{color:var(--text-dim);line-height:1.55;margin:0}
+.recording-status{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--border);font-size:11px;letter-spacing:.08em;font-weight:800;color:var(--text-dim)}
+.recording-status-dot{width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 5px color-mix(in srgb,var(--amber) 16%,transparent)}
+.recording-status.connected .recording-status-dot{background:var(--green);box-shadow:0 0 0 5px color-mix(in srgb,var(--green) 16%,transparent)}
+.recording-status.recording .recording-status-dot{background:var(--red);animation:mt-record-pulse 1s infinite}
+@keyframes mt-record-pulse{50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--red) 12%,transparent)}}
+.recording-card,.recording-hint{padding:clamp(14px,2.5vw,22px);border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:0 8px 26px #0002}
+.recording-card h3{margin:0 0 14px;color:var(--cream);font-size:13px;letter-spacing:.08em}
+.recording-field{display:grid;gap:7px;margin:12px 0;color:var(--text-dim);font-size:10px;font-weight:800;letter-spacing:.08em}
+.recording-field .studio-select{width:100%;max-width:none;min-height:42px;padding:9px 12px}
+.recording-field input[type=range]{width:100%;accent-color:var(--accent)}
+.recording-field output{color:var(--accent-strong);font-weight:800}
+.recording-meter-wrap{margin:16px 0}
+.recording-meter-head{display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);margin-bottom:8px}
+.recording-meter-head strong{color:var(--green)}
+.recording-meter{height:13px;border-radius:99px;overflow:hidden;background:linear-gradient(90deg,#193b30 0 68%,#594b21 68% 88%,#592b30 88%);padding:2px}
+.recording-meter i{display:block;width:0;height:100%;border-radius:99px;background:linear-gradient(90deg,#4fbf6a,#d8c45a,#df5757);transition:width 70ms linear}
+.recording-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.record-main-button{flex:1;min-height:54px;padding:12px 18px;border:0;border-radius:15px;background:linear-gradient(135deg,var(--accent),var(--accent-strong));color:white;font-weight:900;font-size:14px;letter-spacing:.04em;box-shadow:0 8px 22px color-mix(in srgb,var(--accent) 25%,transparent)}
+.record-main-button.is-recording{background:linear-gradient(135deg,#dc4545,#9d2020);animation:mt-record-pulse 1.2s infinite}
+.recording-hint strong{display:block;margin-bottom:8px;color:var(--cream);font-size:11px;letter-spacing:.1em}
+#view-studio{overflow:auto}
+#bottomnav{grid-template-columns:repeat(8,minmax(0,1fr))}
+.nav-btn .nav-label{font-size:clamp(6px,1.7vw,9px);letter-spacing:0}
+@media(max-width:520px){.recording-studio-host{padding:9px}.recording-actions{display:grid;grid-template-columns:1fr 1fr}.record-main-button{grid-column:1/-1}#bottomnav .nav-icon{font-size:15px}}
+@media(prefers-reduced-motion:reduce){.recording-status.recording .recording-status-dot,.record-main-button.is-recording{animation:none}}
