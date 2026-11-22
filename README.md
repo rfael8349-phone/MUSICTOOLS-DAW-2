@@ -54,3 +54,17 @@ Changes are committed to the feature branch. Runtime testing is still required o
 - Existing per-track EQ, gain, pan, compressor, effects, groove banks and responsive safe-area layout are retained.
 
 **Validation status:** source changes are committed on the V7.6 feature branch. Browser syntax/runtime and physical iPhone Safari / Android Chrome audio, recording latency, external sample host and offline-cache behavior must still be tested. A branch link is available for review; it is not a device-certified release.
+
+
+## V7.7.0 — recording studio, drum kits and regional grooves
+
+- Adds a dedicated ESTUDIO workspace with audio-track destination, input selection, microphone permission check, live input meter, per-track input gain and record/stop controls.
+- The record action reuses the existing transport's four-beat count-in and places the recorded take as an audio clip on the selected track.
+- Adds ten original drum-kit profiles based on the bundled CC0 acoustic one-shots, with distinct kick/snare/hat/cymbal/tom mappings and balanced hit velocities.
+- Rebalances drum playback: stronger kick and snare fundamentals, reduced hi-hat/cymbal levels and lower auxiliary percussion to reduce masking.
+- Expands the rhythm selector with country and regional traditions: Paraguayan polka and guarania, Argentine chacarera/zamba/tango, Mexican ranchera/norteño/mariachi, Colombian cumbia/vallenato, Caribbean salsa/merengue/reggaeton, Brazilian samba/bossa nova, Spanish flamenco/pasodoble, plus blues, country, jazz, funk and afrobeat.
+- Applies a softer, rounded visual language with responsive recording cards, meters and animated recording state.
+
+**Drum sound provenance:** the kits are original combinations and level profiles using the existing CC0 Phazite acoustic one-shots. They are not exact copies of named bands' proprietary studio drum recordings or player-specific kits. A truly faithful artist kit would require properly licensed multitrack samples or a recording session.
+
+**Validation status:** source is on the V7.7 feature branch. Verify microphone permission and recording on iPhone Safari and Android Chrome, and audition every kit/groove on physical speakers/headphones before release.
