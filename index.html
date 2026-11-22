@@ -4,12 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
 <meta name="theme-color" content="#eaf0f8" />
-<title>MUSICTOOL DAW V7.6.0</title>
-<link rel="manifest" href="manifest.webmanifest?v=7.6.0" />
+<title>MUSICTOOL DAW V7.7.0</title>
+<link rel="manifest" href="manifest.webmanifest?v=7.7.0" />
 <link rel="icon" href="assets/mascot.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="css/theme.css?v=7.6.0" />
-<link rel="stylesheet" href="css/main.css?v=7.6.0" />
-<link rel="stylesheet" href="css/adaptive-studio.css?v=7.6.0" />
+<link rel="stylesheet" href="css/theme.css?v=7.7.0" />
+<link rel="stylesheet" href="css/main.css?v=7.7.0" />
+<link rel="stylesheet" href="css/adaptive-studio.css?v=7.7.0" />
 </head>
 <body>
 <div id="app">
@@ -20,7 +20,7 @@
       <img src="assets/mascot.svg" alt="" class="brand-mascot" />
       <div class="brand-text">
         <span class="brand-title">MUSICTOOL</span>
-        <span class="brand-sub">DAW · V7.6.0</span>
+        <span class="brand-sub">DAW · V7.7.0</span>
       </div>
     </div>
 
@@ -46,8 +46,18 @@
   <!-- MAIN VIEWS -->
   <main id="views">
 
+    <!-- RECORDING STUDIO -->
+    <section class="view active" id="view-studio" data-view="studio">
+      <div class="studio-dashboard">
+        <div class="studio-dashboard-head"><div><p class="eyebrow">MUSICTOOL · RECORDING ROOM</p><h1>Estudio de grabación</h1><p>Selecciona una pista, arma tu toma y graba sin salir de esta pantalla.</p></div><span class="studio-live-dot">● AUDIO</span></div>
+        <div class="studio-rec-card"><label for="studio-track-select">PISTA DE GRABACIÓN</label><select id="studio-track-select" class="studio-select"></select><div class="studio-rec-actions"><button class="btn accent" id="studio-record">● GRABAR</button><button class="btn" id="studio-play">▶ REPRODUCIR</button><button class="btn" id="studio-stop">■ DETENER</button></div><p class="studio-hint">La toma se coloca en la pista seleccionada dentro de la Playlist. Permite el acceso al micrófono cuando el navegador lo solicite.</p></div>
+        <div class="studio-dashboard-shortcuts"><button class="btn" id="studio-open-playlist">▤ ABRIR MULTIPISTA</button><button class="btn" id="studio-add-track">＋ NUEVA PISTA</button><button class="btn" id="studio-open-mixer">▥ MEZCLADOR</button></div>
+        <div class="studio-track-summary" id="studio-track-summary"></div>
+      </div>
+    </section>
+
     <!-- PLAYLIST -->
-    <section class="view active" id="view-playlist" data-view="playlist">
+    <section class="view" id="view-playlist" data-view="playlist">
       <div class="playlist-toolbar">
         <button class="btn accent" id="btn-add-track">+ TRACK</button>
         <button class="btn" id="btn-add-audio-track">+ AUDIO</button>
@@ -124,7 +134,8 @@
 
   <!-- BOTTOM NAV -->
   <nav id="bottomnav">
-    <button class="nav-btn active" data-target="playlist">
+    <button class="nav-btn active" data-target="studio"><span class="nav-icon">●</span><span class="nav-label">ESTUDIO</span></button>
+    <button class="nav-btn" data-target="playlist">
       <span class="nav-icon">▤</span><span class="nav-label">PLAYLIST</span>
     </button>
     <button class="nav-btn" data-target="mixer">
@@ -150,7 +161,8 @@
 
 </div>
 
-<script type="module" src="js/app.js?v=7.6.0"></script>
-<script type="module" src="js/adaptive-studio.js?v=7.6.0"></script>
+<script type="module" src="js/app.js?v=7.7.0"></script>
+<script type="module" src="js/studio-dashboard.js?v=7.7.0"></script>
+<script type="module" src="js/adaptive-studio.js?v=7.7.0"></script>
 </body>
 </html>
