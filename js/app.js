@@ -130,6 +130,8 @@ async function boot() {
     showBootError(err);
   }
 
+  window.dispatchEvent(new Event('musictool:ready'));
+
   // Save in the background; storage failures must not break the controls.
   setInterval(() => saveProject().catch(showBootError), 10000);
   transport.toast(hadSaved ? 'Project restored' : 'MUSICTOOL ready');
