@@ -39,6 +39,7 @@ function renderPiano(host){
    access.inputs.forEach(attach);access.onstatechange=()=>access.inputs.forEach(attach);midiAccess=access;renderPiano(host);
    toast('MIDI conectado · '+access.inputs.size+' entrada(s)');
   }catch(e){toast('No se pudo conectar MIDI');}
+ };
 
  const rec=node('button','compact-toggle record-mini','●');rec.type='button';rec.title='Grabar interpretación MIDI';rec.setAttribute('aria-label',rec.title);
  rec.onclick=()=>{if(midiCapture){toast('Ya estás grabando MIDI');return;}let track=state.tracks.find(t=>t.id===state.selectedTrackId&&t.kind==='midi');if(!track)track=createTrack('midi','MIDI Instrument '+(state.tracks.length+1));state.selectedTrackId=track.id;midiCapture={trackId:track.id,started:performance.now(),startSec:Math.max(0,state.playhead),notes:[]};activeCaptureNotes.clear();rec.classList.add('active');rec.title='Grabando MIDI';toast('Grabación MIDI preparada · toca el teclado');};
